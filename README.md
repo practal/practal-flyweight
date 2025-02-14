@@ -1,2 +1,3 @@
-# hybrid-module-template
-Template repository for a hybrid ESM / CommonJS module.
+# Practal Flyweight
+
+Flyweight implementation of abstraction logic.
