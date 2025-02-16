@@ -1,4 +1,4 @@
-import { Hash, Order } from "things"
+import { Hash, nat, Order } from "things"
 
 export interface Kernel<Id, Template, DBTerm> {
     
@@ -15,14 +15,18 @@ export interface Kernel<Id, Template, DBTerm> {
      * Returns the variable of a variable application, 
      * or undefined if this is not a variable application.
      */
-    varOf(template : Template) : Id | undefined
+    varOfTerm(template : Template) : Id | undefined
     
     /**
      * Returns the abstraction of an abstraction application,
      * or undefined if this is not an abstraction application.
      * @param template 
      */
-    absOf(template : Template) : Id | undefined
+    absOfTerm(template : Template) : Id | undefined
+    
+    arityOfTemplate(template : Template) : nat
+    
+    
     
         
     
