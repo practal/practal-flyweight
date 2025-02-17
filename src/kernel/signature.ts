@@ -1,25 +1,37 @@
 import { Data, force, nat, RedBlackMap, Thing } from "things"
 
-export type AritySpec = { arity : nat, variadic : boolean }
-export type ShapeSpec = { shape : AritySpec[], variadic? : AritySpec }
-export type AbsSigSpec<Id> = [Id, ShapeSpec][]
+export type AritySpec<Id> = { name? : Id, binders : (Id | null)[], variadic? : boolean | Id }
+export type ShapeSpec<Id> = { shape : AritySpec<Id>[], variadic? : AritySpec<Id> }
+export type AbsSigSpec<Id> = [Id, ShapeSpec<Id>][]
 
 export type Shape = nat[]
 export type AbsSig<Id> = [Id, Shape][]
 
-function aritySpecsOverlap(spec1 : AritySpec, spec2 : AritySpec) : boolean {
-    if (spec1.variadic && spec2.variadic) return true;
-    if (!spec1.variadic && !spec2.variadic) return spec1.arity === spec2.arity;
-    if (spec1.variadic) {
-        // !spec2.variadic
-        return spec2.arity >= spec1.arity;
+function arityOfSpec<Id>(spec : AritySpec<Id>) : nat {
+    return spec.binders.length;
+}
+
+function isVariadic<Id>(spec : AritySpec<Id>) : boolean {
+    return spec?.variadic !== undefined && spec?.variadic !== false;
+}
+
+function aritySpecsOverlap<Id>(spec1 : AritySpec<Id>, spec2 : AritySpec<Id>) : boolean {
+    const variadic1 = isVariadic(spec1);
+    const variadic2 = isVariadic(spec2);
+    if (variadic1 && variadic1) return true;
+    const arity1 = arityOfSpec(spec1);
+    const arity2 = arityOfSpec(spec2);    
+    if (!variadic1 && !variadic2) return arity1 === arity2;
+    if (variadic1) {
+        // !variadic2
+        return arity2 >= arity1;
     } else { 
-        // spec2.variadic
-        return spec1.arity >= spec2.arity;
+        // variadic2
+        return arity1 >= arity2;
     }
 }
 
-function shapeSpecsOverlap(spec1 : ShapeSpec, spec2 : ShapeSpec) : boolean {
+function shapeSpecsOverlap<Id>(spec1 : ShapeSpec<Id>, spec2 : ShapeSpec<Id>) : boolean {
     const min = Math.min(spec1.shape.length, spec2.shape.length);
     const max = Math.max(spec1.shape.length, spec2.shape.length);
     for (let i = 0; i < min; i++) {
@@ -57,24 +69,33 @@ function absSigSpecsOverlap<Id>(ids : Data<Id>, abs1 : AbsSigSpec<Id>, abs2 : Ab
 
 // declare forall (... . _)
 
-function displayAritySpec(spec : AritySpec) : string {
-    if (spec.arity === 0) {
-        if (spec.variadic) return "(... . _)"; else return "_";
+function displayAritySpec<Id>(ids : Thing<Id>, spec : AritySpec<Id>) : string {
+    const arity = arityOfSpec(spec);
+    const variadic = isVariadic(spec);
+    const name = spec?.name === undefined ? "_" : ids.display(spec.name);
+    const dots = ids.is(spec.variadic) ? "..." + ids.display(spec.variadic) : "...";
+    if (arity === 0) {
+        if (variadic) return "(" + dots + " => " + name + ")"; else return name;
     }
-    let result = "(_";
-    for (let i = 1; i < spec.arity; i++) {
-        result += " _";
+    function binder(i : nat) : string {
+        const b = spec.binders[i];
+        if (b === null) return "_"; else return ids.display(b);
+    }
+    let result = "(" + binder(0);
+    for (let i = 1; i < arity; i++) {
+        result += " " + binder(i);
     } 
-    if (spec.variadic) result += " ...";
-    return result + " . _)";
+    if (variadic) result += " " + dots;
+    return result + " => " + name + ")";
 }
 
-function displayShapeSpec(shapeSpec : ShapeSpec) : string {
-    let result = shapeSpec.shape.map(displayAritySpec).join(" ");
+function displayShapeSpec<Id>(ids : Thing<Id>, shapeSpec : ShapeSpec<Id>) : string {
+    let result = shapeSpec.shape.map(spec => displayAritySpec(ids, spec)).join(" ");
     if (shapeSpec.variadic) {
         if (result !== "") result += " ";
         result += "...";
-        result += displayAritySpec(shapeSpec.variadic);
+        const v = displayAritySpec(ids, shapeSpec.variadic)
+        if (v !== "_") result += v;
     }
     return result;
 }
@@ -82,12 +103,12 @@ function displayShapeSpec(shapeSpec : ShapeSpec) : string {
 function displayAbsSigSpec<Id>(ids : Thing<Id>, absSigSpec : AbsSigSpec<Id>) : string {
     const [id, spec] = absSigSpec[0];
     let result = ids.display(id);
-    const args = displayShapeSpec(spec);
+    const args = displayShapeSpec(ids, spec);
     if (args !== "") result += " " + args;
     for (let i = 1; i < absSigSpec.length; i++) {
         const [id, spec] = absSigSpec[i];
         result += " " + ids.display(id) + ":";
-        const args = displayShapeSpec(spec);
+        const args = displayShapeSpec(ids, spec);
         if (args !== "") result += " " + args;
     }
     return result;

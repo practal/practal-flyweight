@@ -1,7 +1,7 @@
 import { Test } from "things";
 import { defaultTerms } from "./default-terms.js";
 import { displayTerm } from "./display.js";
-import { emptySignature } from "./signature.js";
+import { AritySpec, emptySignature, ShapeSpec } from "./signature.js";
 
 /*Test(() => {
     const terms = defaultTerms;
@@ -23,13 +23,16 @@ import { emptySignature } from "./signature.js";
 }, "terms");*/
 
 const terms = defaultTerms;
-const x = terms.mkId("x");
-const y = terms.mkVarApp(terms.mkId("y"), []);
+function vid(s : string) : string {
+    return terms.mkId(s);
+}
+const x = vid("x");
+const y = terms.mkVarApp(vid("y"), []);
 const t = terms.mkVarApp(x, [y, y]);
 console.log(terms.display(t));
 let sig = emptySignature(terms.ids);
-sig = sig.declare([[terms.mkId("for-all"), {shape : [{arity:2, variadic:true}]}]]);
-sig = sig.declare([[terms.mkId("for-all"), {shape : [{arity:1, variadic:false}]}]]);
+sig = sig.declare([[terms.mkId("for-all"), {shape : [{name : vid("P"), binders: [vid("x"), vid("y")], variadic: vid("xs")}]}]]);
+sig = sig.declare([[terms.mkId("for-all"), {shape : [{name : vid("P"), binders: [vid("x")], variadic:false}]}]]);
 console.log("--- signature begin");
 for (const [id, absSigSpecs] of sig.allAbsSigSpecs()) {
     for (const absSigSpec of absSigSpecs) {
