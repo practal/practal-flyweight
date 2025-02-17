@@ -1,4 +1,7 @@
-import { Hash, nat, Order } from "things"
+import { assertTrue, Hash, int, nat, Order, Relation } from "things"
+import { hashTerm } from "./hash.js";
+import { compareTerms } from "./compare.js";
+import { displayTerm } from "./display.js";
 
 export enum TermKind {
     varapp = "varapp",
@@ -12,12 +15,10 @@ export function isTermKind(kind : any) : kind is TermKind {
         || kind === TermKind.bound || kind === TermKind.template;
 }
 
-export interface Terms<Id, Term> {
+export interface BaseTerms<Id, Term> {
     
     ids : Hash<Id> & Order<Id>
-    
-    terms : Hash<Term> & Order<Term>
-        
+            
     mkId(id : string) : Id
     
     incrementId(id : Id) : Id
@@ -41,3 +42,98 @@ export interface Terms<Id, Term> {
     mkTemplate(binders : Id[], body : Term) : Term
 
 }
+
+export interface Terms<Id, Term> extends BaseTerms<Id, Term>, Hash<Term>, Order<Term> {}
+
+export function termsFromBase<Id, Term>(base : BaseTerms<Id, Term>, 
+    name : string, isTerm : (_ : any) => boolean) : Terms<Id, Term> 
+{
+    return new TermsFromBase(base, name, isTerm);
+}
+
+class TermsFromBase<Id, Term> implements Terms<Id, Term> {
+    
+    #base : BaseTerms<Id, Term>
+    #isTerm : (_ : any) => boolean
+    
+    ids: Hash<Id> & Order<Id>;
+    
+    name : string;
+    
+    constructor(base : BaseTerms<Id, Term>, name : string, isTerm : (_ : any) => boolean) {
+        this.#base = base;
+        this.ids = base.ids;
+        this.name = name;
+        this.#isTerm = isTerm;
+    }
+    
+    mkId(id: string): Id {
+        return this.#base.mkId(id);
+    }
+    
+    incrementId(id: Id): Id {
+        return this.#base.incrementId(id);
+    }
+    
+    termKindOf(term: Term): TermKind {
+        return this.#base.termKindOf(term);
+    }
+
+    destVarApp(term: Term): [Id, Term[]] {
+        return this.#base.destVarApp(term);
+    }
+    
+    destAbsApp(term: Term): [Id, Term[]][] {
+        return this.#base.destAbsApp(term);
+    }
+    
+    destBoundVar(term: Term): nat {
+        return this.#base.destBoundVar(term);
+    }
+    
+    destTemplate(term: Term): [Id[], Term] {
+        return this.#base.destTemplate(term);
+    }
+    
+    mkVarApp(varname: Id, args: Term[]): Term {
+        return this.#base.mkVarApp(varname, args);
+    }
+    
+    mkAbsApp(absapp: [Id, Term[]][]): Term {
+        return this.#base.mkAbsApp(absapp);
+    }
+    
+    mkBoundVar(index: nat): Term {
+        return this.#base.mkBoundVar(index);
+    }
+    
+    mkTemplate(binders: Id[], body: Term): Term {
+        return this.#base.mkTemplate(binders, body);
+    }
+    
+    hash(term: Term): int {
+        return hashTerm(this.#base, term);
+    }
+    
+    equal(x: Term, y: Term): boolean {
+        return compareTerms(this.#base, x, y) === Relation.EQUAL;
+    }
+    
+    is(value: any): value is Term {
+        return this.#isTerm(value);
+    }
+    
+    assert(value: any): asserts value is Term {
+        assertTrue(this.#isTerm(value), "Term assertion failed.");
+    }
+    
+    display(term: Term): string {
+        return displayTerm(this.#base, term);
+    }
+    
+    compare(x: Term, y: Term): Relation {
+        return compareTerms(this.#base, x, y);
+    }
+    
+}
+
