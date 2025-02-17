@@ -36,4 +36,5 @@ for (const [id, absSigSpecs] of sig.allAbsSigSpecs()) {
         console.log("spec '" + sig.display(absSigSpec) + "'");
     }
 }
+// declare for-all (x ... => P)
 console.log("--- signature end");
