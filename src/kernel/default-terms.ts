@@ -1,4 +1,4 @@
-import { Hash, Order, nat, string } from "things";
+import { Data, nat, string } from "things";
 import {BaseTerms, isTermKind, TermKind, Terms, termsFromBase} from "./terms.js";
 
 type Id = string
@@ -32,7 +32,7 @@ function checkTerm(term : any) : term is Term {
 
 class DefaultTerms implements BaseTerms<Id, Term> {
     
-    ids: Hash<string> & Order<string>;
+    ids: Data<Id>;
     
     constructor() {
         this.ids = string;

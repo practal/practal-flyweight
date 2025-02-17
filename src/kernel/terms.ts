@@ -1,4 +1,4 @@
-import { assertTrue, Hash, int, nat, Order, Relation } from "things"
+import { assertTrue, Data, int, nat, Relation } from "things"
 import { hashTerm } from "./hash.js";
 import { compareTerms } from "./compare.js";
 import { displayTerm } from "./display.js";
@@ -17,7 +17,7 @@ export function isTermKind(kind : any) : kind is TermKind {
 
 export interface BaseTerms<Id, Term> {
     
-    ids : Hash<Id> & Order<Id>
+    ids : Data<Id>
             
     mkId(id : string) : Id
     
@@ -43,7 +43,7 @@ export interface BaseTerms<Id, Term> {
 
 }
 
-export interface Terms<Id, Term> extends BaseTerms<Id, Term>, Hash<Term>, Order<Term> {}
+export interface Terms<Id, Term> extends BaseTerms<Id, Term>, Data<Term>{}
 
 export function termsFromBase<Id, Term>(base : BaseTerms<Id, Term>, 
     name : string, isTerm : (_ : any) => boolean) : Terms<Id, Term> 
@@ -56,7 +56,7 @@ class TermsFromBase<Id, Term> implements Terms<Id, Term> {
     #base : BaseTerms<Id, Term>
     #isTerm : (_ : any) => boolean
     
-    ids: Hash<Id> & Order<Id>;
+    ids: Data<Id>;
     
     name : string;
     
