@@ -1,6 +1,7 @@
-import { ExprGrammar, SHOW_CONFLICTS, altP, flatListResults, literalP, lookaheadP, lrP,  mkTerminalParsers,  optP,  orP,  recursiveP,  rep1P,  repP,  rule, seqP, showLRConflicts, tagP } from "@practal/parsing";
+import { ExprGrammar, SHOW_CONFLICTS, altP, charP, flatListResults, literalP, lookaheadP, lrP,  mkTerminalParsers,  optP,  orP,  recursiveP,  rep1P,  repP,  rule, seqP, showLRConflicts, tagP } from "@practal/parsing";
 import { anyCharP, bobP, createRXParseEnvironment, E, runDeterministicRXParser, RXDocument, startOfRXDocument } from "@practal/rx";
 import { P, R, RXPos, TAG, anyBlockP, anyLineP, blockCloseP, blockOpenP, bolP, charTestP, debugP, firstLongestP, longestP, newlineP,  unicodeLetterP, wsP } from "@practal/rx";
+import { isDigit } from "things";
 //import { debug } from "things";
 
 //showLRConflicts(SHOW_CONFLICTS.full);
@@ -10,6 +11,7 @@ export enum TermTag {
     defaultId = "defaultId",
     absid = "absid",
     varid = "varid",
+    bound = "bound",
     varapp = "varapp",
     invalid = "invalid",
     unparsed = "unparsed",
@@ -31,6 +33,8 @@ export enum TermTag {
 
 const identifierP : P = tagP(TermTag.id, rep1P(unicodeLetterP));
 const defaultIdP : P = tagP(TermTag.defaultId, literalP("$"));
+
+const boundP : P = tagP(TermTag.bound, seqP(literalP("↑"), rep1P(charTestP(isDigit))));
 
 const ows = "ows";
 const ws = "ws";
@@ -58,6 +62,7 @@ function grammarFor(start : "Templates") : ExprGrammar {
             rule("AppExpr", "AppLevel",  "TemplatesInBrackets"),
 
             rule("Atomic", "id"),
+            rule("Atomic", "bound"),
             rule("Atomic", "VarApp"),
             rule("Atomic", "TemplatesInBrackets"),
             rule("Atomic", "blocks"),
@@ -105,6 +110,7 @@ function grammarFor(start : "Templates") : ExprGrammar {
                 "binders",
                 "open",
                 "close",
+                "bound",
                 "blocks",
                 ws
             ],
@@ -153,6 +159,7 @@ function terminalParsers()  {
         ["label", labelP],
         ["varappOpen", varappOpenP],
         ["id", identifierP],
+        ["bound", boundP],
         ["defaultId", defaultIdP],
         ["squareClose", squareCloseP],
         ["open", roundOpenP],

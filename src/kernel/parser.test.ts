@@ -108,6 +108,15 @@ function parseTerm<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Term>, termC
             return terms.mkVarApp(id, []);
     }
     
+    function convertBound(result : R) : Term {
+        expect(result, TermTag.bound);
+        const text = textOfRXLine(env.document, result.start, result.end);
+        if (text.startsWith("↑")) {
+            return terms.mkBoundVar(Number.parseInt(text.substring(1)));
+        } else 
+            throw new Error("Unknown syntax for bound variable: '" + text + "'");
+    }
+    
     function convert(result : R) : Term {
         switch (result.type) {
             case TermTag.template: return convertTemplate(result);
@@ -115,6 +124,7 @@ function parseTerm<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Term>, termC
             case TermTag.absapp: return convertAbsApp(result);
             case TermTag.varapp: return convertVarApp(result);
             case TermTag.id: return resolveId(convertId(result));
+            case TermTag.bound: return convertBound(result);
             default: throw new Error("convert not implemented: " + result.type);
         }
     }
@@ -129,7 +139,7 @@ function parseTerm<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Term>, termC
 }
 
 
-const example3 = "x, y => f cool: x[x, y] y[x, y]";
+const example3 = "x, x, y => f x[x, y] y[↑1, y]";
 
 const terms = defaultTerms;
 const sig = emptySignature(terms.ids);

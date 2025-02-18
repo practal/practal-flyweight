@@ -11,10 +11,16 @@ export function displayTerm<Id, Term>(terms : BaseTerms<Id, Term>, term : Term,
         switch(kind) {
             case TermKind.bound: {
                 const index = terms.destBoundVar(term);
-                if (index < names.length)
-                    return ids.display(names[names.length - index - 1]);
-                else 
-                    return "↑" + (index - names.length);
+                if (index < names.length) {
+                    const id = names[names.length - index - 1];
+                    for (let i = 0; i < index; i++) {
+                        if (ids.equal(id, names[names.length - i - 1])) {
+                            return "↑" + index;
+                        }
+                    }
+                    return ids.display(id);
+                } else 
+                    return "↑" + index;
             }
             case TermKind.template: {
                 const [binders, body] = terms.destTemplate(term);
