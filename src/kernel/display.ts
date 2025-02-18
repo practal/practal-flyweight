@@ -12,7 +12,7 @@ export function displayTerm<Id, Term>(terms : BaseTerms<Id, Term>, term : Term,
             case TermKind.bound: {
                 const index = terms.destBoundVar(term);
                 if (index < names.length)
-                    return ids.display(names[index]);
+                    return ids.display(names[names.length - index - 1]);
                 else 
                     return "↑" + (index - names.length);
             }

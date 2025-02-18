@@ -11,6 +11,20 @@ function arityOfSpec<Id>(spec : AritySpec<Id>) : nat {
     return spec.binders.length;
 }
 
+export function specOfArity<Id>(arity : nat) : AritySpec<Id> {
+    const binders : null[] = [];
+    for (let i = 0; i < arity; i++) binders.push(null);
+    return { binders: binders };
+}
+
+export function specOfShape<Id>(shape : Shape) : ShapeSpec<Id> {
+    return { shape : shape.map(specOfArity<Id>) };
+}
+
+export function specOfAbsSig<Id>(absSig : AbsSig<Id>) : AbsSigSpec<Id> {
+    return absSig.map(([id, spec]) => [id, specOfShape(spec)]);
+}
+
 function isVariadic<Id>(spec : AritySpec<Id>) : boolean {
     return spec?.variadic !== undefined && spec?.variadic !== false;
 }
@@ -115,11 +129,17 @@ function displayAbsSigSpec<Id>(ids : Thing<Id>, absSigSpec : AbsSigSpec<Id>) : s
 }
 
 export interface Signature<Id> {
+    
+    ids : Data<Id>
 
     declare(absSigSpec : AbsSigSpec<Id>) : Signature<Id>
 
     display(absSigSpec : AbsSigSpec<Id>) : string
     
+    overlapsWith(absSigSpec : AbsSigSpec<Id>) : boolean
+    
+    isDeclared(absSig : AbsSig<Id>) : boolean
+
     allAbsSigSpecs() : [Id, AbsSigSpec<Id>[]][]
     
 }
@@ -131,10 +151,13 @@ class Sig<Id> implements Signature<Id> {
     #ids : Data<Id>
     #absSigs : AbsSigs<Id>
     
-    
     constructor(ids : Data<Id>, absSigs : AbsSigs<Id>) {
         this.#ids = ids;
         this.#absSigs = absSigs;
+    }
+    
+    get ids() : Data<Id> {
+        return this.#ids;
     }
     
     display(absSigSpec : AbsSigSpec<Id>) : string {
@@ -154,6 +177,20 @@ class Sig<Id> implements Signature<Id> {
         }
         const newSpecs = [...specs, absSigSpec];
         return new Sig(this.#ids, this.#absSigs.set(id, newSpecs));
+    }
+    
+    overlapsWith(absSigSpec : AbsSigSpec<Id>) : boolean {
+        const [id, _] = absSigSpec[0];
+        let specs = this.#absSigs.get(id) ?? [];
+        for (const spec of specs) {
+            if (absSigSpecsOverlap(this.#ids, absSigSpec, spec)) return true;
+        }
+        return false;
+    }
+    
+    isDeclared(absSig : AbsSig<Id>) : boolean {
+        const spec = specOfAbsSig(absSig);
+        return this.overlapsWith(spec);
     }
     
     allAbsSigSpecs() : [Id, AbsSigSpec<Id>[]][] {
