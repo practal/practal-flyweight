@@ -46,7 +46,7 @@ export function displayTerm<Id, Term>(terms : BaseTerms<Id, Term>, term : Term,
                 let brackets = false;
                 const nameAndArgs = terms.destAbsApp(term);
                 for (let i = 0; i < nameAndArgs.length; i++) {
-                    const [varname, args] = nameAndArgs[0];
+                    const [varname, args] = nameAndArgs[i];
                     const name = ids.display(varname);
                     if (i > 0) {
                         brackets = true;

@@ -39,7 +39,7 @@ const boundP : P = tagP(TermTag.bound, seqP(literalP("↑"), rep1P(charTestP(isD
 const ows = "ows";
 const ws = "ws";
 
-function grammarFor(start : "Templates") : ExprGrammar {
+function grammarFor(start : "Template") : ExprGrammar {
     const g : ExprGrammar = { 
         start : "Start",
         
@@ -59,12 +59,12 @@ function grammarFor(start : "Templates") : ExprGrammar {
 
             rule("AppLevel", "Atomic"),
             rule("AppLevel", "AppExpr"),
-            rule("AppExpr", "AppLevel",  "TemplatesInBrackets"),
+            rule("AppExpr", "AppLevel",  "TemplateInBrackets"),
 
             rule("Atomic", "id"),
             rule("Atomic", "bound"),
             rule("Atomic", "VarApp"),
-            rule("Atomic", "TemplatesInBrackets"),
+            rule("Atomic", "TemplateInBrackets"),
             rule("Atomic", "blocks"),
 
             rule("AbsApp", "AbsId", "AbsArgs"),
@@ -90,11 +90,11 @@ function grammarFor(start : "Templates") : ExprGrammar {
             rule("Template", "Term"),
             rule("Template", "TemplateOnly"),
 
-            rule("TemplatesInBrackets", "open", ows, "Templates", ows, "close"),
-            rule("TemplatesInBrackets", "open", ows, "close"),
+            rule("TemplateInBrackets", "open", ows, "Template", ows, "close"),
+            //rule("TemplatesInBrackets", "open", ows, "close"),
 
-            rule("Templates", "Template"),
-            rule("Templates", "Templates", ows, "comma", ows, "Template"),
+            //rule("Templates", "Template"),
+            //rule("Templates", "Templates", ows, "comma", ows, "Template"),
 
         ],
 
@@ -122,7 +122,7 @@ function grammarFor(start : "Templates") : ExprGrammar {
     return g;
 }
 
-const template_grammar = grammarFor("Templates");
+const template_grammar = grammarFor("Template");
 
 const dotP : P = orP(literalP("."), literalP("=>"));
 

@@ -76,12 +76,28 @@ function parseTerm<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Term>, termC
         return terms.mkTemplate(ids, body);
     }
     
+    function convertAbsArgs(absId : Id, result : R) : [Id, Term[]][] {
+        expect(result, TermTag.absargs);
+        const nameAndArgs : [Id, Term[]][] = [[absId, []]];
+        for (const child of childrenOf(result)) {
+            if (child.type === TermTag.label) {
+                const label = convertId(select1(child, TermTag.id));
+                nameAndArgs.push([label, []]);
+            } else {
+                const arg = convert(child);
+                const args = nameAndArgs[nameAndArgs.length - 1][1];
+                args.push(arg);
+            }
+        }
+        return nameAndArgs;
+    }
+    
     function convertAbsApp(result : R) : Term {
         expect(result, TermTag.absapp);
         const absId = select1(result, TermTag.absid);
         const id = convertId(selectUniqueChild(absId));
-        const absArgs = childrenOf(select1(result, TermTag.absargs)).map(convert);
-        return terms.mkAbsApp([[id, absArgs]]);
+        const absArgs = select1(result, TermTag.absargs);
+        return terms.mkAbsApp(convertAbsArgs(id, absArgs));
     }
     
     function convertVarApp(result : R) : Term {
@@ -138,8 +154,7 @@ function parseTerm<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Term>, termC
     }
 }
 
-
-const example3 = "x, x, y => f x[x, y] y[↑1, y]";
+const example3 = "x, x, y => f cool: (u. x x[x, y] y[↑1, y])";
 
 const terms = defaultTerms;
 const sig = emptySignature(terms.ids);
