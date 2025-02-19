@@ -1,8 +1,9 @@
 import { assertNever, nat } from "things";
 import { AbsSig, displayAbsSigSpec, Shape, Signature, specOfAbsSig } from "./signature.js";
 import { TermKind, Terms } from "./terms.js";
+import { Sequent } from "./theory.js";
 
-function absSigOfAbsApp<Id, Term>(terms : Terms<Id, Term>, absapp : [Id, Term[]][]) : AbsSig<Id>{
+export function absSigOfAbsApp<Id, Term>(terms : Terms<Id, Term>, absapp : [Id, Term[]][]) : AbsSig<Id>{
     const absSig : AbsSig<Id> = [];
     for (const [id, args] of absapp) {
         const shape : Shape = args.map(t => terms.arityOfTemplate(t));
@@ -54,3 +55,10 @@ export function validateTerm<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Te
     
     validate(level, term);
 }
+
+export function validateSequent<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Term>, 
+    sequent : Sequent<Term>)
+{
+    for (const t of sequent.antecedents) validateTerm(sig, terms, t);
+    for (const t of sequent.succedents) validateTerm(sig, terms, t);
+} 

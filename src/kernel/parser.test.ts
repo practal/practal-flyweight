@@ -1,6 +1,6 @@
-import { emptySignature } from "./signature.js";
+import { displayAbsSigSpec, emptySignature } from "./signature.js";
 import { defaultTerms } from "./default-terms.js";
-import { parseTerm } from "./parser.js";
+import { parseDeclaration, parseTerm } from "./parser.js";
 import { assertEqT, assertIsUndefinedT, assertT, Test } from "things";
 
 const terms = defaultTerms;
@@ -23,3 +23,7 @@ Test(() => {
     parseTest("x. x", "x. x");
     parseTest("x", "x");
 }, "parseTests");
+
+const spec = parseDeclaration(sig, terms, "x");
+if (spec === undefined) console.log("Cannot parse declaration.");
+else console.log("Declaration successfully parsed: ", displayAbsSigSpec(sig.ids, spec));

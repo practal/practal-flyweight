@@ -1,24 +1,31 @@
 import { freeze, RedBlackMap } from "things";
 import { AbsSigSpec, emptySignature, Signature } from "./signature.js";
 import { Terms } from "./terms.js";
-import { validateTerm } from "./validate.js";
+import { validateSequent, validateTerm } from "./validate.js";
+import { normalizeSequent, PAxiom, Proof } from "./proof.js";
+
+export type Sequent<Term> = { antecedents : Term[], succedents : Term[] }
+
+// Obviously not safe, but will do (for now).
+export type Theorem<Id, Term> = { theory : Theory<Id, Term>, proof : Proof<Id, Term>, sequent : Sequent<Term>}
 
 export interface Theory<Id, Term> {
 
     terms : Terms<Id, Term>
+
     sig : Signature<Id>
         
     declare(absSigSpec : AbsSigSpec<Id>) : Theory<Id, Term>
     
-    assume(label : Id, term : Term) : Theory<Id, Term>
+    assume(label : Id, axiom : Sequent<Term>) : Theory<Id, Term>
     
-    axiom(id : Id) : Term
+    axiom(id : Id) : Theorem<Id, Term>
     
-    listAxioms() : [Id, Term][]
+    listAxioms() : Id[]
     
 }
 
-type Axioms<Id, Term> = RedBlackMap<Id, Term>
+type Axioms<Id, Term> = RedBlackMap<Id, Sequent<Term>>
 
 class Thy<Id, Term> implements Theory<Id, Term> {
     
@@ -33,14 +40,15 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         freeze(this);
     }
     
-    listAxioms() : [Id, Term][] {
-        return [...this.#axioms];
+    listAxioms() : Id[] {
+        return [...this.#axioms].map(r => r[0]);
     }
     
-    axiom(label : Id) : Term {
-        const t = this.#axioms.get(label);
-        if (t === undefined) throw new Error("No such error: " + this.terms.ids.display(label));
-        return t;
+    axiom(label : Id) : Theorem<Id, Term> {
+        const s = this.#axioms.get(label);
+        if (s === undefined) throw new Error("No such error: " + this.terms.ids.display(label));
+        const proof : PAxiom<Id, Term> = { axiomLabel: label };
+        return { theory : this, proof : proof, sequent : s };
     }
     
     declare(absSigSpec : AbsSigSpec<Id>) : Theory<Id, Term> {
@@ -48,11 +56,11 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         return new Thy(this.terms, newSig, this.#axioms);
     }
     
-    assume(label : Id, term : Term) : Theory<Id, Term> {
-        validateTerm(this.sig, this.terms, term);
+    assume(label : Id, sequent : Sequent<Term>) : Theory<Id, Term> {
+        validateSequent(this.sig, this.terms, sequent);
         if (this.#axioms.has(label)) 
             throw new Error("There is already an axiom named '" + label + "'.");
-        const newAxioms = this.#axioms.set(label, term);
+        const newAxioms = this.#axioms.set(label, normalizeSequent(this.terms, sequent));
         return new Thy(this.terms, this.sig, newAxioms);
     }
     

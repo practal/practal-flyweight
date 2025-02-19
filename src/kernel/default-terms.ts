@@ -1,8 +1,8 @@
 import { Data, freeze, nat, string } from "things";
 import {BaseTerms, isTermKind, TermKind, Terms, termsFromBase} from "./terms.js";
 
-type Id = string
-type Term = VarApp | AbsApp | Bound | Template
+export type Id = string
+export type Term = VarApp | AbsApp | Bound | Template
 
 type VarApp = {
     kind : TermKind.varapp,

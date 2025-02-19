@@ -2,8 +2,9 @@ import { ExprGrammar, SHOW_CONFLICTS, altP, charP, flatListResults, literalP, lo
 import { anyCharP, bobP, createRXParseEnvironment, E, owsP, runDeterministicRXParser, RXDocument, startOfRXDocument, textOfRXLine } from "@practal/rx";
 import { P, R, RXPos, TAG, anyBlockP, anyLineP, blockCloseP, blockOpenP, bolP, charTestP, debugP, firstLongestP, longestP, newlineP,  unicodeLetterP, wsP } from "@practal/rx";
 import { isDigit } from "things";
-import { Signature } from "./signature.js";
-import { Terms } from "./terms.js";
+import { AbsSigSpec, Signature, specOfAbsSig } from "./signature.js";
+import { TermKind, Terms } from "./terms.js";
+import { absSigOfAbsApp } from "./validate.js";
 //import { debug } from "things";
 
 //showLRConflicts(SHOW_CONFLICTS.full);
@@ -25,6 +26,7 @@ export enum TermTag {
     templates = "templates",
     absapp = "absapp",
     absargs = "absargs",
+    declaration = "declaration",
     plus = "plus",
     app = "app",
     block = "block",
@@ -41,7 +43,7 @@ const boundP : P = tagP(TermTag.bound, seqP(literalP("↑"), rep1P(charTestP(isD
 const ows = "ows";
 const ws = "ws";
 
-function grammarFor(start : "Template") : ExprGrammar {
+function grammarFor(start : "Template" | "Declaration") : ExprGrammar {
     const g : ExprGrammar = { 
         start : "Start",
         
@@ -62,6 +64,9 @@ function grammarFor(start : "Template") : ExprGrammar {
             rule("AppLevel", "Atomic"),
             rule("AppLevel", "AppExpr"),
             rule("AppExpr", "AppLevel",  "TemplateInBrackets"),
+            
+            rule("Declaration", "AbsId"),
+            rule("Declaration", "AbsApp"),
 
             rule("Atomic", "id"),
             rule("Atomic", "bound"),
@@ -125,6 +130,7 @@ function grammarFor(start : "Template") : ExprGrammar {
 }
 
 const template_grammar = grammarFor("Template");
+const declaration_grammar = grammarFor("Declaration");
 
 const dotP : P = orP(literalP("."), literalP("=>"));
 
@@ -176,6 +182,7 @@ function terminalParsers()  {
 
 const nonterminalTags : [string, string][] = [
     ["Term", TermTag.term],
+    ["Declaration", TermTag.declaration],
     ["AbsApp", TermTag.absapp],
     ["AbsArgs", TermTag.absargs],
     ["AbsId", TermTag.absid],
@@ -189,8 +196,13 @@ const nonterminalTags : [string, string][] = [
 const template_lr = 
     lrP(template_grammar, nonterminalTags, terminalParsers(), TermTag.invalid);
 
-export const templateP : P = template_lr.longest_valid_prefix;
-export const templateLongestP : P = template_lr.longest_prefix;
+const templateP : P = template_lr.longest_valid_prefix;
+//export const templateLongestP : P = template_lr.longest_prefix;
+
+const declaration_lr = 
+    lrP(declaration_grammar, nonterminalTags, terminalParsers(), TermTag.invalid);
+
+const declarationP : P = declaration_lr.longest_valid_prefix;
 
 function log(s : string) {
     console.log(s);
@@ -202,13 +214,24 @@ if (template_lr.conflicts.size > 0) {
         log("Conflict symbol: " + conflict);
     }
 } else {
-    log("No grammar conflicts found.");
+    log("No template grammar conflicts found.");
 }
 
-export function parseTerm<Id, Term>(sig : Signature<Id>, 
+if (declaration_lr.conflicts.size > 0) {
+    log("There are " + declaration_lr.conflicts.size + " conflicts in declaration grammar.");
+    for (const conflict of declaration_lr.conflicts) {
+        log("Conflict symbol: " + conflict);
+    }
+} else {
+    log("No declaration grammar conflicts found.");
+}
+
+
+
+function parseTermWith<Id, Term>(parser : P, sig : Signature<Id>, 
     terms : Terms<Id, Term>, term : string, suppressErrors : boolean = false) : Term | undefined 
 {
-    const parseResult = runDeterministicRXParser(term, seqP(blockOpenP, owsP, templateP, owsP, blockCloseP));
+    const parseResult = runDeterministicRXParser(term, seqP(blockOpenP, owsP, parser, owsP, blockCloseP));
     if (parseResult === undefined) return undefined;
     if (parseResult.pruned.length !== 1) return undefined;
     const env = parseResult.env;
@@ -297,6 +320,13 @@ export function parseTerm<Id, Term>(sig : Signature<Id>,
         return terms.mkAbsApp(convertAbsArgs(id, absArgs));
     }
     
+    function convertStandaloneAbsId(result : R) : Term {
+        expect(result, TermTag.absid);
+        const id = convertId(selectUniqueChild(result));
+        return terms.mkAbsApp([[id, []]]);
+    }
+    
+    
     function convertVarApp(result : R) : Term {
         expect(result, TermTag.varapp);
         const varid = convertId(selectUniqueChild(select1(result, TermTag.varid)));
@@ -306,6 +336,12 @@ export function parseTerm<Id, Term>(sig : Signature<Id>,
     
     function convertTerm(result : R) : Term {
         expect(result, TermTag.term);
+        const child = selectUniqueChild(result);
+        return convert(child);
+    }
+
+    function convertDeclaration(result : R) : Term {
+        expect(result, TermTag.declaration);
         const child = selectUniqueChild(result);
         return convert(child);
     }
@@ -334,10 +370,12 @@ export function parseTerm<Id, Term>(sig : Signature<Id>,
         switch (result.type) {
             case TermTag.template: return convertTemplate(result);
             case TermTag.term: return convertTerm(result);
+            case TermTag.declaration: return convertDeclaration(result);
             case TermTag.absapp: return convertAbsApp(result);
             case TermTag.varapp: return convertVarApp(result);
             case TermTag.id: return resolveId(convertId(result));
             case TermTag.bound: return convertBound(result);
+            case TermTag.absid: return convertStandaloneAbsId(result);
             case TermTag.invalid: throw new Error("Invalid term.");
             default: throw new Error("convert not implemented: " + result.type);
         }
@@ -354,5 +392,19 @@ export function parseTerm<Id, Term>(sig : Signature<Id>,
     }
 }
 
-
-
+export function parseTerm<Id, Term>(sig : Signature<Id>, 
+    terms : Terms<Id, Term>, term : string, suppressErrors : boolean = false) : Term | undefined 
+{
+    return parseTermWith(templateP, sig, terms, term, suppressErrors);
+}
+        
+export function parseDeclaration<Id, Term>(sig : Signature<Id>, 
+    terms : Terms<Id, Term>, declaration : string, 
+    suppressErrors : boolean = false) : AbsSigSpec<Id> | undefined 
+{
+    const term = parseTermWith(declarationP, sig, terms, declaration, suppressErrors);
+    if (term === undefined) return undefined;
+    if (terms.termKindOf(term) !== TermKind.absapp) return undefined;
+    const absapp = terms.destAbsApp(term);
+    return specOfAbsSig(absSigOfAbsApp(terms, absapp)); // sloppy, improve later
+}
