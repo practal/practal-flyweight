@@ -7,6 +7,22 @@ export type AbsSigSpec<Id> = [Id, ShapeSpec<Id>][]
 export type Shape = nat[]
 export type AbsSig<Id> = [Id, Shape][]
 
+export interface Signature<Id> {
+    
+    ids : Data<Id>
+
+    declare(absSigSpec : AbsSigSpec<Id>) : Signature<Id>
+
+    display(absSigSpec : AbsSigSpec<Id>) : string
+    
+    overlapsWith(absSigSpec : AbsSigSpec<Id>) : boolean
+    
+    isDeclared(absSig : AbsSig<Id>) : boolean
+
+    allAbsSigSpecs() : [Id, AbsSigSpec<Id>[]][]
+    
+}
+
 function arityOfSpec<Id>(spec : AritySpec<Id>) : nat {
     return spec.binders.length;
 }
@@ -126,22 +142,6 @@ function displayAbsSigSpec<Id>(ids : Thing<Id>, absSigSpec : AbsSigSpec<Id>) : s
         if (args !== "") result += " " + args;
     }
     return result;
-}
-
-export interface Signature<Id> {
-    
-    ids : Data<Id>
-
-    declare(absSigSpec : AbsSigSpec<Id>) : Signature<Id>
-
-    display(absSigSpec : AbsSigSpec<Id>) : string
-    
-    overlapsWith(absSigSpec : AbsSigSpec<Id>) : boolean
-    
-    isDeclared(absSig : AbsSig<Id>) : boolean
-
-    allAbsSigSpecs() : [Id, AbsSigSpec<Id>[]][]
-    
 }
 
 type AbsSigs<Id> = RedBlackMap<Id, AbsSigSpec<Id>[]>
