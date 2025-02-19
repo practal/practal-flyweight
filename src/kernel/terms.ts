@@ -21,8 +21,6 @@ export interface BaseTerms<Id, Term> {
             
     mkId(id : string) : Id
     
-    incrementId(id : Id) : Id
-    
     termKindOf(term : Term) : TermKind
     
     destVarApp(term : Term) : [Id, Term[]]
@@ -69,10 +67,6 @@ class TermsFromBase<Id, Term> implements Terms<Id, Term> {
     
     mkId(id: string): Id {
         return this.#base.mkId(id);
-    }
-    
-    incrementId(id: Id): Id {
-        return this.#base.incrementId(id);
     }
     
     termKindOf(term: Term): TermKind {
