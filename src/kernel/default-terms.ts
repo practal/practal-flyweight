@@ -1,4 +1,4 @@
-import { Data, nat, string } from "things";
+import { Data, freeze, nat, string } from "things";
 import {BaseTerms, isTermKind, TermKind, Terms, termsFromBase} from "./terms.js";
 
 type Id = string
@@ -36,6 +36,7 @@ class DefaultTerms implements BaseTerms<Id, Term> {
     
     constructor() {
         this.ids = string;
+        freeze(this);
     }
         
     mkId(id: string): Id {
@@ -80,6 +81,15 @@ class DefaultTerms implements BaseTerms<Id, Term> {
         }
     }
     
+    arityOfTemplate(term : Term) : nat {
+        if (term.kind === TermKind.template) {
+            return term.binders.length;
+        } else {
+            // a term is a nullary template
+            return 0;
+        }
+    }
+    
     mkVarApp(varname: Id, args: Term[]): Term {
         for (const arg of args) {
             if (arg.kind === TermKind.template) throw new Error("Variable cannot be applied to templates.");
@@ -117,6 +127,7 @@ class DefaultTerms implements BaseTerms<Id, Term> {
     }
 
 }
+freeze(DefaultTerms);
 
 export const defaultTerms : Terms<Id, Term> = termsFromBase(
     new DefaultTerms(), "defaultTerms", checkTerm);

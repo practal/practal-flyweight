@@ -1,4 +1,4 @@
-import { assertTrue, Data, int, nat, Relation } from "things"
+import { assertTrue, Data, freeze, int, nat, Relation } from "things"
 import { hashTerm } from "./hash.js";
 import { compareTerms } from "./compare.js";
 import { displayTerm } from "./display.js";
@@ -30,6 +30,8 @@ export interface BaseTerms<Id, Term> {
     destBoundVar(term : Term) : nat
     
     destTemplate(term : Term) : [Id[], Term]
+    
+    arityOfTemplate(term : Term) : nat
 
     mkVarApp(varname : Id, args : Term[]) : Term
     
@@ -63,6 +65,7 @@ class TermsFromBase<Id, Term> implements Terms<Id, Term> {
         this.ids = base.ids;
         this.name = name;
         this.#isTerm = isTerm;
+        freeze(this);
     }
     
     mkId(id: string): Id {
@@ -87,6 +90,10 @@ class TermsFromBase<Id, Term> implements Terms<Id, Term> {
     
     destTemplate(term: Term): [Id[], Term] {
         return this.#base.destTemplate(term);
+    }
+    
+    arityOfTemplate(term: Term): nat {
+        return this.#base.arityOfTemplate(term);
     }
     
     mkVarApp(varname: Id, args: Term[]): Term {
@@ -130,4 +137,5 @@ class TermsFromBase<Id, Term> implements Terms<Id, Term> {
     }
     
 }
+freeze(TermsFromBase);
 

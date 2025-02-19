@@ -1,4 +1,4 @@
-import { Data, force, nat, RedBlackMap, Thing } from "things"
+import { Data, force, freeze, nat, RedBlackMap, Thing } from "things"
 
 export type AritySpec<Id> = { name? : Id, binders : (Id | null)[], variadic? : boolean | Id }
 export type ShapeSpec<Id> = { shape : AritySpec<Id>[], variadic? : AritySpec<Id> }
@@ -130,7 +130,7 @@ function displayShapeSpec<Id>(ids : Thing<Id>, shapeSpec : ShapeSpec<Id>) : stri
     return result;
 }
 
-function displayAbsSigSpec<Id>(ids : Thing<Id>, absSigSpec : AbsSigSpec<Id>) : string {
+export function displayAbsSigSpec<Id>(ids : Thing<Id>, absSigSpec : AbsSigSpec<Id>) : string {
     const [id, spec] = absSigSpec[0];
     let result = ids.display(id);
     const args = displayShapeSpec(ids, spec);
@@ -154,6 +154,7 @@ class Sig<Id> implements Signature<Id> {
     constructor(ids : Data<Id>, absSigs : AbsSigs<Id>) {
         this.#ids = ids;
         this.#absSigs = absSigs;
+        freeze(this);
     }
     
     get ids() : Data<Id> {
@@ -198,6 +199,7 @@ class Sig<Id> implements Signature<Id> {
     }
 
 }
+freeze(Sig);
 
 export function emptySignature<Id>(ids : Data<Id>) : Signature<Id> {
     const absSigs : AbsSigs<Id> = RedBlackMap(ids);

@@ -259,7 +259,7 @@ export function parseTerm<Id, Term>(sig : Signature<Id>,
         localVariables.push(...binders.toReversed());
     }
     function popBinders(binders : Id[]) {
-        for (const binder of binders) localVariables.pop();
+        for (const _ of binders) localVariables.pop();
     }
     
     function convertTemplate(result : R) : Term {
