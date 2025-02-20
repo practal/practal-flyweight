@@ -1,110 +1,64 @@
+import { RedBlackMap } from "things";
 import { defaultTerms, displayAbsSigSpec, emptyTheory, Id, parseDeclaration, parseTerm, 
     Sequent, Term, Theory, validateTerm } from "./kernel/index.js";
+import { Context } from "./context.js";
 
 const terms = defaultTerms;
 const empty = emptyTheory(terms);
-var currentTheory = empty;
+let currentTheory = empty;
+
+let theories : RedBlackMap<Id, Theory<Id, Term>> = RedBlackMap(terms.ids);
+
+export const context = new Context(defaultTerms, RedBlackMap(terms.ids));
 
 export function info() {
-    console.log("");
-    console.log("Theory has " + currentTheory.sig.size + " declarations and " + 
-        currentTheory.listAxioms().length + " axioms.");
-    console.log("");
+    context.info();
 }
 
 export function parse(term : string) : Term | undefined {
-    return parseTerm(currentTheory.sig, currentTheory.terms, term)
+    return context.parse(term);
 }
 
 export function theory() : Theory<Id, Term> {
-    return currentTheory;
+    return context.theory();
 }
 
-export function reset(theory? : Theory<Id, Term>) {
-    if (theory === undefined) {
-        currentTheory = empty;
-    } else {
-        currentTheory = theory;
-    }
+export function reset() {
+    context.reset();
+}
+
+export function displayId(id : Id) : string {
+    return context.displayId(id);
+}
+
+export function store(theoryName : string) {
+    context.store(theoryName);
+}
+
+export function restore(theoryName : string) {
+    context.restore(theoryName);
 }
 
 export function declare(declaration : string) {
-    const spec = parseDeclaration(currentTheory.sig, currentTheory.terms, declaration);
-    if (spec === undefined) {
-        console.log("Could not parse declaration '" + declaration + "'.");
-    } else {
-        currentTheory = currentTheory.declare(spec);
-        console.log("Declared '" + displayAbsSigSpec(terms.ids, spec) + "'.");
-    }
+    context.declare(declaration);
 }
 
 export function validate(term : string) {
-    const t = parse(term);
-    if (t === undefined) {
-        console.log("Could not parse '" + term + "' for validation.");
-    } else {
-        validateTerm(currentTheory.sig, currentTheory.terms, t);
-        console.log("Successfully validated '" + terms.display(t) + "'."); 
-    }
-}
-
-function parseItems(error : (item : string) => string, items : string | string[]) : Term[] | undefined {
-    const list = (typeof items === "string") ? [items] : items;
-    const termList : Term[] = [];
-    for (const item of list) {
-        const t = parse(item);
-        if (t === undefined) { 
-            console.log(error(item));
-            return undefined;
-        }
-        termList.push(t);
-    }
-    return termList;
+    context.validate(term);
 }
 
 export function display(term : Term) : string {
-    return currentTheory.terms.display(term);
+    return context.display(term);
 }
 
 export function printSequent(label : string, sequent : Sequent<Term>) {
-    let len = 0;
-    for (const ante of sequent.antecedents) {
-        len = Math.max(len, display(ante).length);
-    }
-    for (const succ of sequent.succedents) {
-        len = Math.max(len, display(succ).length);
-    }
-    let sep = "";
-    for (let i = 0; i < len + 4; i++) sep += "-";
-    console.log(label);
-    //console.log("  |");    
-    for (const ante of sequent.antecedents) {
-        console.log("  |  " + display(ante));
-    }
-    console.log("  |" + sep);
-    for (const succ of sequent.succedents) {
-        console.log("  |  " + display(succ));
-    }
-    //console.log("  |");    
+    context.printSequent(label, sequent);
 }
 
 export function assume(label : string, 
     succedents : string | string[], antecedents : string | string[] = []) 
 {
-    const tSuccedents = 
-        parseItems(s => "Could not parse succedent '" + s + "' of axiom.", succedents);
-    const tAntecedents = 
-        parseItems(s => "Could not parse antecedent '" + s + "' of axiom.", antecedents);
-    if (tSuccedents === undefined || tAntecedents === undefined) return;
-    for (const succedent of tSuccedents) {
-        validateTerm(currentTheory.sig, currentTheory.terms, succedent);
-    }
-    for (const antecedent of tAntecedents) {
-        validateTerm(currentTheory.sig, currentTheory.terms, antecedent);
-    }    
-    const axiom = { antecedents : tAntecedents, succedents : tSuccedents };
-    currentTheory = currentTheory.assume(label, axiom);
-    printSequent("Axiom " + label + ":", currentTheory.axiom(label).sequent);
+    context.assume(label, succedents, antecedents);
 }
 
 console.log("");
