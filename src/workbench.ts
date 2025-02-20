@@ -23,16 +23,20 @@ export function theory() : Theory<Id, Term> {
     return context.theory();
 }
 
-export function reset() {
-    context.reset();
+export function beginTheory() {
+    context.beginTheory();
+}
+
+export function importTheory(theoryName : string) {
+    context.importTheory(theoryName);
 }
 
 export function displayId(id : Id) : string {
     return context.displayId(id);
 }
 
-export function store(theoryName : string) {
-    context.store(theoryName);
+export function endTheory(theoryName : string) {
+    context.endTheory(theoryName);
 }
 
 export function restore(theoryName : string) {

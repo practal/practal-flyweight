@@ -30,15 +30,24 @@ export class Context<Id, Term> {
         return this.currentTheory;
     }
 
-    reset() {
+    beginTheory() {
         this.currentTheory = this.empty;
+    }
+    
+    importTheory(theoryName : string) {
+        const theoryId = this.currentTheory.terms.mkId(theoryName);
+        const thy = this.theories.get(theoryId);
+        if (thy === undefined) 
+            throw new Error("There is no theory '" + this.displayId(theoryId) + "' to import.");
+        console.log("Imported theory '" + this.displayId(theoryId) + "'.");
+          
     }
 
     displayId(id : Id) : string {
         return this.currentTheory.terms.ids.display(id);
     }
 
-    store(theoryName : string) {
+    endTheory(theoryName : string) {
         const theoryId = this.currentTheory.terms.mkId(theoryName);
         if (this.theories.has(theoryId)) 
             throw new Error("There exists already a theory '" + this.displayId(theoryId) + "'.");
