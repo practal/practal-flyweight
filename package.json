@@ -14,7 +14,7 @@
   "scripts": {
     "build": "rm -fr dist/* && tsc -p tsconfig.json && tsc -p tsconfig-cjs.json && ./fixup",
     "rx": "npm run build && node dist/esm/rx/syntax.js",
-    "workbench": "npm run build && node dist/esm/kernel/workbench.run.js",
+    "workbench": "npm run build && node dist/esm/workbench.run.js",
     "test": "npm run build && node dist/esm/package.test.js && node dist/cjs/package.test.js"
   },
   "repository": {

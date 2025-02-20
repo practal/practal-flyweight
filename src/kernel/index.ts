@@ -6,3 +6,5 @@ export * from "./display.js";
 export * from "./compare.js";
 export * from "./parser.js";
 export * from "./theory.js";
+export * from "./validate.js";
+export * from "./proof.js";
