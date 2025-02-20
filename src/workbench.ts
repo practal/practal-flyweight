@@ -1,8 +1,5 @@
-import { defaultTerms, Id, Term } from "./kernel/default-terms.js";
-import { parseDeclaration, parseTerm } from "./kernel/parser.js";
-import { displayAbsSigSpec } from "./kernel/signature.js";
-import { emptyTheory, Sequent, Theory } from "./kernel/theory.js";
-import { validateTerm } from "./kernel/validate.js";
+import { defaultTerms, displayAbsSigSpec, emptyTheory, Id, parseDeclaration, parseTerm, 
+    Sequent, Term, Theory, validateTerm } from "./kernel/index.js";
 
 const terms = defaultTerms;
 const empty = emptyTheory(terms);
