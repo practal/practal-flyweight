@@ -65,7 +65,7 @@ function grammarFor(start : "Template" | "Declaration") : ExprGrammar {
             rule("AppLevel", "AppExpr"),
             rule("AppExpr", "AppLevel",  "TemplateInBrackets"),
             
-            rule("Declaration", "AbsId"),
+            rule("Declaration", "DeclAbsId"),
             rule("Declaration", "AbsApp"),
 
             rule("Atomic", "id"),
@@ -76,7 +76,9 @@ function grammarFor(start : "Template" | "Declaration") : ExprGrammar {
 
             rule("AbsApp", "AbsId", "AbsArgs"),
             rule("AbsId", "id", ws),
-            rule("AbsId", "defaultId", ws),
+            
+            rule("DeclAbsId", "id"),
+            //rule("AbsId", "defaultId", ows),
 
             rule("Arg", "AppLevel"),
             rule("Arg", "label"),
@@ -108,7 +110,7 @@ function grammarFor(start : "Template" | "Declaration") : ExprGrammar {
         distinct : [
             [
                 "id",
-                "defaultId",
+                //"defaultId",
                 "varappOpen",
                 "squareClose",
                 "comma",
@@ -168,7 +170,7 @@ function terminalParsers()  {
         ["varappOpen", varappOpenP],
         ["id", identifierP],
         ["bound", boundP],
-        ["defaultId", defaultIdP],
+        //["defaultId", defaultIdP],
         ["squareClose", squareCloseP],
         ["open", roundOpenP],
         ["close", roundCloseP],
@@ -186,6 +188,7 @@ const nonterminalTags : [string, string][] = [
     ["AbsApp", TermTag.absapp],
     ["AbsArgs", TermTag.absargs],
     ["AbsId", TermTag.absid],
+    ["DeclAbsId", TermTag.absid],    
     ["VarApp", TermTag.varapp],
     ["TemplateOnly", TermTag.template],
     ["TemplatesInBrackets", TermTag.templates],

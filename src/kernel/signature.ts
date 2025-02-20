@@ -10,6 +10,8 @@ export type AbsSig<Id> = [Id, Shape][]
 export interface Signature<Id> {
     
     ids : Data<Id>
+    
+    size : nat
 
     declare(absSigSpec : AbsSigSpec<Id>) : Signature<Id>
 
@@ -161,6 +163,12 @@ class Sig<Id> implements Signature<Id> {
         return this.#ids;
     }
     
+    get size() : nat {
+        let count = 0;
+        for (const [_, specs] of this.#absSigs) count += specs.length;
+        return count;
+    }
+    
     display(absSigSpec : AbsSigSpec<Id>) : string {
         return displayAbsSigSpec(this.#ids, absSigSpec);
     }
@@ -195,7 +203,7 @@ class Sig<Id> implements Signature<Id> {
     }
     
     allAbsSigSpecs() : [Id, AbsSigSpec<Id>[]][] {
-        return [...this.#absSigs];
+        return  [...this.#absSigs];
     }
 
 }

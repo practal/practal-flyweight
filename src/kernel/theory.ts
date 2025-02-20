@@ -2,7 +2,7 @@ import { freeze, RedBlackMap } from "things";
 import { AbsSigSpec, emptySignature, Signature } from "./signature.js";
 import { Terms } from "./terms.js";
 import { validateSequent, validateTerm } from "./validate.js";
-import { normalizeSequent, PAxiom, Proof } from "./proof.js";
+import { removeDuplicatesInSequent, PAxiom, Proof } from "./proof.js";
 
 export type Sequent<Term> = { antecedents : Term[], succedents : Term[] }
 
@@ -60,7 +60,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         validateSequent(this.sig, this.terms, sequent);
         if (this.#axioms.has(label)) 
             throw new Error("There is already an axiom named '" + label + "'.");
-        const newAxioms = this.#axioms.set(label, normalizeSequent(this.terms, sequent));
+        const newAxioms = this.#axioms.set(label, removeDuplicatesInSequent(this.terms, sequent));
         return new Thy(this.terms, this.sig, newAxioms);
     }
     
