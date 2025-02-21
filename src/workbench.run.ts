@@ -24,6 +24,7 @@ endTheory("Negation");
 beginTheory();
 importTheory("Implication");
 importTheory("Equality");
+importTheory("Negation");
 declare("Nat n");
 declare("zero");
 declare("succ n");

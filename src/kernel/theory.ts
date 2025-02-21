@@ -1,8 +1,8 @@
-import { freeze, RedBlackMap } from "things";
+import { force, freeze, RedBlackMap } from "things";
 import { AbsSigSpec, emptySignature, Signature, specOfAbsSig } from "./signature.js";
 import { Terms } from "./terms.js";
 import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
-import { removeDuplicatesInSequent, PAxiom, Proof, ProofKind, PDefinition } from "./proof.js";
+import { removeDuplicatesInSequent, PAxiom, Proof, ProofKind, PDefinition, equalSequents } from "./proof.js";
 import { isNormalHead } from "./term-utils.js";
 import { displayFreeVar, freeVarsOf, listFreeVars, subtractFreeVars } from "./free-vars.js";
 
@@ -40,6 +40,8 @@ export interface Theory<Id, Term> {
     listDefinitions() : Id[]
     
     listTheorems() : Id[]
+    
+    importTheory(thy : Theory<Id, Term>) : Theory<Id, Term> 
     
 }
 
@@ -151,6 +153,45 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         }
         const newDefs = this.#definitions.set(label, { head: head, definiens: definiens });
         return new Thy(this.terms, newSig, this.#axioms, newDefs, this.#theorems);
+    }
+    
+    importTheory(thy : Theory<Id, Term>) : Theory<Id, Term> {
+        let currentTheory : Theory<Id, Term> = this;
+        for (const [_, absSigSpecs] of thy.sig.allAbsSigSpecs()) {
+            for (const absSigSpec of absSigSpecs) {
+                if (!currentTheory.sig.specIsDeclared(absSigSpec)) {
+                    currentTheory = currentTheory.declare(absSigSpec);
+                    break;
+                }
+            }
+        }
+        for (const label of thy.listAxioms()) {
+            const axiom = thy.axiom(label).sequent;
+            if (currentTheory.hasAxiom(label)) {
+                const currentAxiom = currentTheory.axiom(label);
+                if (!equalSequents(currentTheory.terms, currentAxiom.sequent, axiom)) 
+                    throw new Error("Cannot import theory, imported axiom '" + 
+                        this.terms.ids.display(label) + "' differs.");
+            } else {
+                currentTheory = currentTheory.assume(label, axiom);
+            }
+        }
+        for (const label of thy.listDefinitions()) {
+            if (currentTheory.hasDefinition(label)) {
+                if (!equalSequents(currentTheory.terms, 
+                    currentTheory.definition(label).sequent, thy.definition(label).sequent))
+                { 
+                    throw new Error("Cannot import theory, imported definition '" + 
+                        this.terms.ids.display(label) + "' differs.");
+                }
+            } else {
+                const thySource = thy as Thy<Id, Term>;
+                const d = force(thySource.#definitions.get(label));
+                const newDefs = (currentTheory as Thy<Id, Term>).#definitions.set(label, d); 
+                currentTheory = new Thy(this.terms, this.sig, this.#axioms, newDefs, this.#theorems);
+            }
+        }
+        return currentTheory;
     }
     
 }

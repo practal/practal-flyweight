@@ -44,6 +44,16 @@ export class Context<Id, Term> {
         const thy = this.theories.get(theoryId);
         if (thy === undefined) 
             this.reportError("There is no theory '" + this.displayId(theoryId) + "' to import.");
+        this.currentTheory = this.currentTheory.importTheory(thy);
+        console.log("Imported theory '" + this.displayId(theoryId) + "'.");        
+    }
+
+
+    importTheoryOld(theoryName : string) {
+        const theoryId = this.currentTheory.terms.mkId(theoryName);
+        const thy = this.theories.get(theoryId);
+        if (thy === undefined) 
+            this.reportError("There is no theory '" + this.displayId(theoryId) + "' to import.");
         let currentTheory = this.currentTheory;
         for (const [_, absSigSpecs] of thy.sig.allAbsSigSpecs()) {
             for (const absSigSpec of absSigSpecs) {
@@ -63,6 +73,11 @@ export class Context<Id, Term> {
                 currentTheory = currentTheory.assume(label, axiom);
             }
         }
+        /*for (const label of thy.listDefinitions()) {
+            const definition = thy.definition(label).sequent;
+            currentTheory. definition.succedents[0]
+        }*/
+        
         this.currentTheory = currentTheory;
         console.log("Imported theory '" + this.displayId(theoryId) + "'.");
     }
