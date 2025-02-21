@@ -1,4 +1,4 @@
-import { Data, force, freeze, nat, RedBlackMap, Thing } from "things"
+import { Data, Equality, force, freeze, nat, RedBlackMap, Thing } from "things"
 
 export type AritySpec<Id> = { name? : Id, binders : (Id | null)[], variadic? : boolean | Id }
 export type ShapeSpec<Id> = { shape : AritySpec<Id>[], variadic? : AritySpec<Id> }
@@ -21,8 +21,41 @@ export interface Signature<Id> {
     
     isDeclared(absSig : AbsSig<Id>) : boolean
 
+    specIsDeclared(absSig : AbsSigSpec<Id>) : boolean
+    
     allAbsSigSpecs() : [Id, AbsSigSpec<Id>[]][]
     
+}
+
+function eqAritySpec<Id>(aritySpec1 : AritySpec<Id>, aritySpec2 : AritySpec<Id>) : boolean {
+    return aritySpec1.binders.length === aritySpec2.binders.length &&
+        isVariadic(aritySpec1) === isVariadic(aritySpec2);
+}
+
+function eqShapeSpec<Id>(shapeSpec1 : ShapeSpec<Id>, shapeSpec2 : ShapeSpec<Id>) : boolean {
+    if (shapeSpec1.shape.length !== shapeSpec2.shape.length) return false;
+    if (shapeSpec1.variadic === undefined || shapeSpec2.variadic === undefined) {
+        if (shapeSpec1.variadic !== shapeSpec2.variadic) return false;
+    } else {
+        if (!eqAritySpec(shapeSpec1.variadic, shapeSpec2.variadic)) return false;
+    }
+    for (let i = 0; i < shapeSpec1.shape.length; i++) {
+        if (!eqAritySpec(shapeSpec1.shape[i], shapeSpec2.shape[i])) return false;
+    }
+    return true;
+}
+
+function eqAbsSigSpec<Id>(ids : Equality<Id>, 
+    absSigSpec1 : AbsSigSpec<Id>, absSigSpec2 : AbsSigSpec<Id>) : boolean 
+{
+    if (absSigSpec1.length !== absSigSpec2.length) return false;
+    for (let i = 0; i < absSigSpec1.length; i++) {
+        const [id1, shapeSpec1] = absSigSpec1[i];
+        const [id2, shapeSpec2] = absSigSpec2[i];
+        if (!ids.equal(id1, id2)) return false;
+        if (!eqShapeSpec<Id>(shapeSpec1, shapeSpec2)) return false;
+    }
+    return true;
 }
 
 function arityOfSpec<Id>(spec : AritySpec<Id>) : nat {
@@ -200,6 +233,16 @@ class Sig<Id> implements Signature<Id> {
     isDeclared(absSig : AbsSig<Id>) : boolean {
         const spec = specOfAbsSig(absSig);
         return this.overlapsWith(spec);
+    }
+    
+    specIsDeclared(absSigSpec : AbsSigSpec<Id>) : boolean {
+        const [id, _] = absSigSpec[0];
+        const absSigSpecs = this.#absSigs.get(id);
+        if (absSigSpecs === undefined) return false;
+        for (const absSigSpec2 of absSigSpecs) {
+            if (eqAbsSigSpec(this.ids, absSigSpec, absSigSpec2)) return true;
+        }
+        return false;
     }
     
     allAbsSigSpecs() : [Id, AbsSigSpec<Id>[]][] {

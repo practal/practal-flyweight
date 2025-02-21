@@ -3,13 +3,7 @@ import { defaultTerms, displayAbsSigSpec, emptyTheory, Id, parseDeclaration, par
     Sequent, Term, Theory, validateTerm } from "./kernel/index.js";
 import { Context } from "./context.js";
 
-const terms = defaultTerms;
-const empty = emptyTheory(terms);
-let currentTheory = empty;
-
-let theories : RedBlackMap<Id, Theory<Id, Term>> = RedBlackMap(terms.ids);
-
-export const context = new Context(defaultTerms, RedBlackMap(terms.ids));
+export const context = new Context(defaultTerms, RedBlackMap(defaultTerms.ids));
 
 export function info() {
     context.info();
@@ -63,6 +57,11 @@ export function assume(label : string,
     succedents : string | string[], antecedents : string | string[] = []) 
 {
     context.assume(label, succedents, antecedents);
+}
+
+export function define(label : string, head : string, definiens : string) 
+{
+    context.define(label, head, definiens);
 }
 
 console.log("");
