@@ -1,5 +1,5 @@
 import { force, freeze, RedBlackMap } from "things";
-import { AbsSigSpec, emptySignature, Signature, specOfAbsSig } from "./signature.js";
+import { AbsSig, AbsSigSpec, absSigSpecsOverlap, emptySignature, equalAbsSig, Signature, specOfAbsSig } from "./signature.js";
 import { Terms } from "./terms.js";
 import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
 import { removeDuplicatesInSequent, PAxiom, Proof, ProofKind, PDefinition, equalSequents } from "./proof.js";
@@ -22,6 +22,8 @@ export interface Theory<Id, Term> {
     assume(label : Id, axiom : Sequent<Term>) : Theory<Id, Term>
     
     define(label : Id, head : Term, definiens : Term) : Theory<Id, Term>
+    
+    note(label : Id, thm : Theorem<Id, Term>) : Theory<Id, Term>
     
     axiom(label : Id) : Theorem<Id, Term>
     
@@ -104,7 +106,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         };
         return { theory : this, proof : proof, sequent : sequent };
     }
-    
+        
     theorem(label : Id) : Theorem<Id, Term> {
         throw new Error();
     }
@@ -136,7 +138,8 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     
     define(label : Id, head : Term, definiens : Term) : Theory<Id, Term> {
         if (this.hasDefinition(label)) 
-            throw new Error("There is already a definition named '" + label + "'.");
+            throw new Error("There is already a definition named '" + 
+                this.terms.ids.display(label) + "'.");
         if (!isNormalHead(this.terms, head)) 
             throw new Error("Left hand side of definition is not a head: '" + 
                 this.terms.display(head) + "'.");
@@ -155,12 +158,56 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         return new Thy(this.terms, newSig, this.#axioms, newDefs, this.#theorems);
     }
     
+    findDefinition(absSig : AbsSig<Id>) : Id | undefined {
+        for (const [id, d] of this.#definitions) {
+            const absSig2 = absSigOfAbsApp(this.terms, this.terms.destAbsApp(d.head));
+            if (equalAbsSig(this.terms.ids, absSig, absSig2)) return id;
+        }
+        return undefined;
+    }
+    
+    #defineViaImport(label : Id, d : Definition<Term>) : Thy<Id, Term> {
+        const absSig = absSigOfAbsApp(this.terms, this.terms.destAbsApp(d.head));
+        const previousDefLabel = this.findDefinition(absSig);
+        if (previousDefLabel !== undefined) {
+            const previousD = force(this.#definitions.get(previousDefLabel));
+            if (!this.terms.equal(d.head, previousD.head) || 
+                !this.terms.equal(d.definiens, previousD.definiens))
+                throw new Error("Cannot import theory, imported definition '" +
+                    this.terms.ids.display(label) + "' clashes with definition '"+
+                    this.terms.ids.display(previousDefLabel) + "'.");
+        }
+        const newDefs = this.#definitions.set(label, d); 
+        return new Thy(this.terms, this.sig, this.#axioms, newDefs, this.#theorems);
+    }
+    
+    checkTheory(theorem : Theorem<Id, Term>) {
+        if (theorem.theory !== this) throw new Error("Theorem is not compatible with this theory.");
+    }
+    
+    note(label : Id, thm : Theorem<Id, Term>) : Theory<Id, Term> {
+        this.checkTheory(thm);
+        if (this.hasTheorem(label)) 
+            throw new Error("There is already a theorem named '" + 
+                this.terms.ids.display(label) + "'.");
+        const newTheorems = this.#theorems.set(label, thm.sequent);
+        return new Thy(this.terms, this.sig, this.#axioms, this.#definitions, newTheorems);
+    }
+    
+    #noteViaImport(label : Id, sequent : Sequent<Term>) : Thy<Id, Term> {
+        if (this.hasTheorem(label)) 
+            throw new Error("There is already a theorem named '" + 
+                this.terms.ids.display(label) + "'.");
+        const newTheorems = this.#theorems.set(label, sequent);
+        return new Thy(this.terms, this.sig, this.#axioms, this.#definitions, newTheorems);
+    }
+
     importTheory(thy : Theory<Id, Term>) : Theory<Id, Term> {
-        let currentTheory : Theory<Id, Term> = this;
+        let currentTheory : Thy<Id, Term> = this;
         for (const [_, absSigSpecs] of thy.sig.allAbsSigSpecs()) {
             for (const absSigSpec of absSigSpecs) {
                 if (!currentTheory.sig.specIsDeclared(absSigSpec)) {
-                    currentTheory = currentTheory.declare(absSigSpec);
+                    currentTheory = currentTheory.declare(absSigSpec) as Thy<Id, Term>;
                     break;
                 }
             }
@@ -173,7 +220,18 @@ class Thy<Id, Term> implements Theory<Id, Term> {
                     throw new Error("Cannot import theory, imported axiom '" + 
                         this.terms.ids.display(label) + "' differs.");
             } else {
-                currentTheory = currentTheory.assume(label, axiom);
+                currentTheory = currentTheory.assume(label, axiom) as Thy<Id, Term>;
+            }
+        }
+        for (const label of thy.listTheorems()) {
+            const th = thy.theorem(label).sequent;
+            if (currentTheory.hasTheorem(label)) {
+                const currentTh = currentTheory.theorem(label);
+                if (!equalSequents(currentTheory.terms, currentTh.sequent, th)) 
+                    throw new Error("Cannot import theory, imported theorem '" + 
+                        this.terms.ids.display(label) + "' differs.");
+            } else {
+                currentTheory = currentTheory.#noteViaImport(label, th);
             }
         }
         for (const label of thy.listDefinitions()) {
@@ -187,13 +245,12 @@ class Thy<Id, Term> implements Theory<Id, Term> {
             } else {
                 const thySource = thy as Thy<Id, Term>;
                 const d = force(thySource.#definitions.get(label));
-                const newDefs = (currentTheory as Thy<Id, Term>).#definitions.set(label, d); 
-                currentTheory = new Thy(this.terms, this.sig, this.#axioms, newDefs, this.#theorems);
+                currentTheory = currentTheory.#defineViaImport(label, d);
             }
         }
         return currentTheory;
     }
-    
+        
 }
 freeze(Thy);
 

@@ -35,3 +35,20 @@ assume("Nat-equals-zero", [], ["Nat n", "equals zero (succ n)"]);
 assume("Nat-induct", "A[n]", ["Nat n", "A[zero]", "n. implies (Nat n) (implies A[n] A[succ n])"]);
 endTheory("PeanoSC");
 
+beginTheory();
+importTheory("PeanoSC");
+define("u1", "u x", "succ x");
+endTheory("u1");
+
+beginTheory();
+importTheory("PeanoSC");
+define("u2", "u y", "succ y");
+endTheory("u2");
+
+beginTheory();
+importTheory("u1");
+importTheory("u2");
+endTheory("u");
+
+
+

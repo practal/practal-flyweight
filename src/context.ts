@@ -1,5 +1,5 @@
 import { nat, RedBlackMap } from "things";
-import { displayAbsSigSpec, emptyTheory, equalSequents, parseDeclaration, parseTerm, Sequent, Terms, Theory, validateTerm } from "./kernel/index.js";
+import { displayAbsSigSpec, emptyTheory, equalSequents, parseDeclaration, parseTerm, Sequent, Terms, Theorem, Theory, validateTerm } from "./kernel/index.js";
 
 export class Context<Id, Term> {
     
@@ -46,40 +46,6 @@ export class Context<Id, Term> {
             this.reportError("There is no theory '" + this.displayId(theoryId) + "' to import.");
         this.currentTheory = this.currentTheory.importTheory(thy);
         console.log("Imported theory '" + this.displayId(theoryId) + "'.");        
-    }
-
-
-    importTheoryOld(theoryName : string) {
-        const theoryId = this.currentTheory.terms.mkId(theoryName);
-        const thy = this.theories.get(theoryId);
-        if (thy === undefined) 
-            this.reportError("There is no theory '" + this.displayId(theoryId) + "' to import.");
-        let currentTheory = this.currentTheory;
-        for (const [_, absSigSpecs] of thy.sig.allAbsSigSpecs()) {
-            for (const absSigSpec of absSigSpecs) {
-                if (!currentTheory.sig.specIsDeclared(absSigSpec)) {
-                    currentTheory = currentTheory.declare(absSigSpec);
-                    break;
-                }
-            }
-        }
-        for (const label of thy.listAxioms()) {
-            const axiom = thy.axiom(label).sequent;
-            if (currentTheory.hasAxiom(label)) {
-                const currentAxiom = currentTheory.axiom(label);
-                if (!equalSequents(currentTheory.terms, currentAxiom.sequent, axiom)) 
-                    this.reportError("Cannot import theory, imported axiom '" + this.displayId(label) + "' differs.");
-            } else {
-                currentTheory = currentTheory.assume(label, axiom);
-            }
-        }
-        /*for (const label of thy.listDefinitions()) {
-            const definition = thy.definition(label).sequent;
-            currentTheory. definition.succedents[0]
-        }*/
-        
-        this.currentTheory = currentTheory;
-        console.log("Imported theory '" + this.displayId(theoryId) + "'.");
     }
 
     displayId(id : Id) : string {
@@ -200,6 +166,12 @@ export class Context<Id, Term> {
         currentTheory = this.currentTheory.define(labelId, headT, definiensT);
         this.printSequent("Definition " + label + ":", currentTheory.definition(labelId).sequent);
         this.currentTheory = currentTheory;
+    }
+    
+    note(label : string, thm : Theorem<Id, Term>) {
+        const labelId = this.currentTheory.terms.mkId(label);
+        this.currentTheory = this.currentTheory.note(labelId, thm);    
+        this.printSequent("Theorem " + label + ":", thm.sequent);    
     }
     
 }

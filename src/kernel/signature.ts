@@ -121,13 +121,27 @@ function shapeSpecsOverlap<Id>(spec1 : ShapeSpec<Id>, spec2 : ShapeSpec<Id>) : b
     return true;
 }
 
-function absSigSpecsOverlap<Id>(ids : Data<Id>, abs1 : AbsSigSpec<Id>, abs2 : AbsSigSpec<Id>) : boolean {
+export function absSigSpecsOverlap<Id>(ids : Data<Id>, abs1 : AbsSigSpec<Id>, abs2 : AbsSigSpec<Id>) : boolean {
     if (abs1.length !== abs2.length) return false;
     for (let i = 0; i < abs1.length; i++) {
         const [id1, spec1] = abs1[i];
         const [id2, spec2] = abs2[i];
         if (!ids.equal(id1, id2)) return false;
         if (!shapeSpecsOverlap(spec1, spec2)) return false;
+    }
+    return true;
+}
+
+export function equalAbsSig<Id>(ids : Data<Id>, absSig1 : AbsSig<Id>, absSig2 : AbsSig<Id>) : boolean {
+    if (absSig1.length !== absSig2.length) return false;
+    for (let i = 0; i < absSig1.length; i++) {
+        const [id1, shape1] = absSig1[i];
+        const [id2, shape2] = absSig2[i];
+        if (!ids.equal(id1, id2)) return false;
+        if (shape1.length !== shape2.length) return false;
+        for (let i = 0; i < shape1.length; i++) {
+            if (shape1[i] !== shape2[i]) return false;
+        }
     }
     return true;
 }
