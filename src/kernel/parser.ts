@@ -5,12 +5,13 @@ import { isDigit } from "things";
 import { AbsSigSpec, Signature, specOfAbsSig } from "./signature.js";
 import { TermKind, Terms } from "./terms.js";
 import { absSigOfAbsApp } from "./validate.js";
+import { identifierP, IdentifierTag } from "./identifier-parser.js";
 //import { debug } from "things";
 
 //showLRConflicts(SHOW_CONFLICTS.full);
 
 export enum TermTag {
-    id = "id",
+    id = IdentifierTag.id,
     defaultId = "defaultId",
     absid = "absid",
     varid = "varid",
@@ -35,8 +36,9 @@ export enum TermTag {
     comment = "comment"
 }
 
-const identifierP : P = tagP(TermTag.id, rep1P(unicodeLetterP));
-const defaultIdP : P = tagP(TermTag.defaultId, literalP("$"));
+
+//const identifierP : P = tagP(TermTag.id, seqP(unicodeLetterP), rep1P(unicodeLetterP));
+//const defaultIdP : P = tagP(TermTag.defaultId, literalP("$"));
 
 const boundP : P = tagP(TermTag.bound, seqP(literalP("↑"), rep1P(charTestP(isDigit))));
 
