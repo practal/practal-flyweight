@@ -3,8 +3,7 @@ import { Terms } from "./terms.js"
 import { Sequent } from "./theory.js"
 
 export enum ProofKind {
-    Axiom = "Axiom",
-    Definition = "Definition",
+    Theorem = "Theorem",
     Assume = "Assume",
     Subst = "Subst",
     AddAnte = "AddAnte",
@@ -19,18 +18,12 @@ export enum ProofKind {
     CutSucc = "CutSucc"
 }
 
-export type Proof<Id, Term> = PAxiom<Id> | PDefinition<Id>
+export type Proof<Id, Term> = PTheorem<Id>
 
-export type PAxiom<Id> = {
-    kind : ProofKind.Axiom,
+export type PTheorem<Id> = {
+    kind : ProofKind.Theorem,
     label : Id
 }
-
-export type PDefinition<Id> = {
-    kind : ProofKind.Definition,
-    label : Id
-}
-
 
 export function removeDuplicatesInTermList<Id, Term>(terms : Terms<Id, Term>, termlist : Term[]) : Term[] {
     const collected = new HashSet(terms);

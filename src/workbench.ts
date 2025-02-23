@@ -53,10 +53,10 @@ export function printSequent(label : string, sequent : Sequent<Term>) {
     context.printSequent(label, sequent);
 }
 
-export function assume(label : string, 
+export function axiom(label : string, 
     succedents : string | string[], antecedents : string | string[] = []) 
 {
-    context.assume(label, succedents, antecedents);
+    context.axiom(label, succedents, antecedents);
 }
 
 export function define(label : string, head : string, definiens : string) 

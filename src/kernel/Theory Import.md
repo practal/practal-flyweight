@@ -24,7 +24,7 @@ To import an axiom s with label l of theory S into T, we first
 check if the label l is already used in T. If not, we add
 the axiom s with label l to T. Otherwise, let t be the theorem
 corresponding to label l in T. If s and t are the same,
-we do nothing. If s and t are different the import fails.
+we do nothing. If s and t are different, the import fails.
 
 ## Importing Theorems
 
@@ -47,5 +47,5 @@ identical to s, in which case we do nothing, otherwise the import fails.
 
 The correctness of theory import can be seen by recognizing 
 that after import, all theorems will be associated with correct and 
-ground proofs. *Grounded* means here that all proofs have no circles,
+grounded proofs. *Grounded* means here that all proofs have no circles,
 and all of its leaves are axioms.

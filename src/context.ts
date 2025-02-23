@@ -134,7 +134,7 @@ export class Context<Id, Term> {
         }
     }
 
-    assume(label : string, 
+    axiom(label : string, 
         succedents : string | string[], antecedents : string | string[] = []) 
     {
         const tSuccedents = 
@@ -149,8 +149,8 @@ export class Context<Id, Term> {
         }    
         const axiom = { antecedents : tAntecedents, succedents : tSuccedents };
         const labelId = this.currentTheory.terms.mkId(label);
-        this.currentTheory = this.currentTheory.assume(labelId, axiom);
-        this.printSequent("Axiom " + label + ":", this.currentTheory.axiom(labelId).sequent);
+        this.currentTheory = this.currentTheory.axiom(labelId, axiom);
+        this.printSequent("Axiom " + label + ":", this.currentTheory.theorem(labelId).sequent);
     }  
     
     define(label : string, head : string, definiens : string)
@@ -164,7 +164,7 @@ export class Context<Id, Term> {
         const definiensT = parseTerm(this.currentTheory.sig, this.currentTheory.terms, definiens);
         if (definiensT === undefined) this.reportError("Cannot parse definiens '" + definiens + "' of definition.");
         currentTheory = this.currentTheory.define(labelId, headT, definiensT);
-        this.printSequent("Definition " + label + ":", currentTheory.definition(labelId).sequent);
+        this.printSequent("Definition " + label + ":", currentTheory.theorem(labelId).sequent);
         this.currentTheory = currentTheory;
     }
     
