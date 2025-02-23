@@ -1,6 +1,5 @@
 import { RedBlackMap } from "things";
-import { defaultTerms, displayAbsSigSpec, emptyTheory, Id, parseDeclaration, parseTerm, 
-    Sequent, Term, Theory, validateTerm } from "./kernel/index.js";
+import { defaultTerms, Id, Sequent, Term, Theory } from "./kernel/index.js";
 import { Context } from "./context.js";
 
 export const context = new Context(defaultTerms, RedBlackMap(defaultTerms.ids));

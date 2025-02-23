@@ -2,7 +2,7 @@ import { force, freeze, RedBlackMap } from "things";
 import { AbsSig, AbsSigSpec, emptySignature, equalAbsSig, Signature, specOfAbsSig } from "./signature.js";
 import { Terms } from "./terms.js";
 import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
-import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem } from "./proof.js";
+import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume } from "./proof.js";
 import { isNormalHead } from "./term-utils.js";
 import { displayFreeVar, freeVarsOf, listFreeVars, subtractFreeVars } from "./free-vars.js";
 
@@ -40,6 +40,12 @@ export interface Theory<Id, Term> {
     listTheorems() : Id[]
     
     importTheory(thy : Theory<Id, Term>) : Theory<Id, Term> 
+    
+    /**
+     * Proof rules
+     */
+    
+    assume(template : Term) : Theorem<Id, Term>
     
 }
 
@@ -96,7 +102,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         if (d === undefined) throw new Error("No such definition: " + this.terms.ids.display(label));
         const proof : PTheorem<Id> = { kind : ProofKind.Theorem, label : label };
         const eq = mkEquals(this.terms, d.head, d.definiens);
-        validateTerm(this.sig, this.terms, eq);
+        this.#validate(eq);
         const sequent : Sequent<Term> = { 
             antecedents : [], 
             succedents : [ mkEquals(this.terms, d.head, d.definiens) ]
@@ -130,7 +136,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     }
         
     axiom(label : Id, sequent : Sequent<Term>) : Theory<Id, Term> {
-        validateSequent(this.sig, this.terms, sequent);
+        this.#validateSeq(sequent);
         if (this.hasTheorem(label)) 
             throw new Error("There is already a theorem named '" + label + "', cannot introduce axiom.");
         const newAxioms = this.#axioms.set(label, removeDuplicatesInSequent(this.terms, sequent));
@@ -144,7 +150,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         if (!isNormalHead(this.terms, head)) 
             throw new Error("Left hand side of definition is not a head: '" + 
                 this.terms.display(head) + "'.");
-        validateTerm(this.sig, this.terms, definiens);
+        this.#validate(definiens);
         const absSig = absSigOfAbsApp(this.terms, this.terms.destAbsApp(head));
         const newSig = this.sig.declare(specOfAbsSig(absSig));
         const freeVarsH = freeVarsOf(this.terms, head);
@@ -173,7 +179,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         } else return this;
     }
     
-    #assumeViaImport(label : Id, axiom : Sequent<Term>) : Thy<Id, Term> {
+    #axiomViaImport(label : Id, axiom : Sequent<Term>) : Thy<Id, Term> {
         if (this.hasTheorem(label)) {
             const currentAxiom = this.theorem(label);
             if (!equalSequents(this.terms, currentAxiom.sequent, axiom)) 
@@ -244,7 +250,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         }
         for (const label of thy.listAxioms()) {
             const axiom = thy.theorem(label).sequent;
-            currentTheory = currentTheory.#assumeViaImport(label, axiom);
+            currentTheory = currentTheory.#axiomViaImport(label, axiom);
         }
         for (const label of thy.listDefinitions()) {
             const d = force(thy.#definitions.get(label));
@@ -255,6 +261,21 @@ class Thy<Id, Term> implements Theory<Id, Term> {
             currentTheory = currentTheory.#noteViaImport(label, th.proof, th.sequent);
         }
         return currentTheory;
+    }
+    
+    #validate(term : Term) {
+        validateTerm(this.sig, this.terms, term);
+    }
+
+    #validateSeq(sequent : Sequent<Term>) {
+        validateSequent(this.sig, this.terms, sequent);
+    }
+    
+    assume(term : Term) : Theorem<Id, Term> {
+        this.#validate(term);
+        const proof : PAssume<Term> = { kind : ProofKind.Assume, term : term };
+        return { theory : this, proof : proof, 
+            sequent : { antecedents : [term], succedents : [term] } };
     }
         
 }

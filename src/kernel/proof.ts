@@ -18,11 +18,16 @@ export enum ProofKind {
     CutSucc = "CutSucc"
 }
 
-export type Proof<Id, Term> = PTheorem<Id>
+export type Proof<Id, Term> = PTheorem<Id> | PAssume<Term>
 
 export type PTheorem<Id> = {
     kind : ProofKind.Theorem,
     label : Id
+}
+
+export type PAssume<Term> = {
+    kind : ProofKind.Assume,
+    term : Term
 }
 
 export function removeDuplicatesInTermList<Id, Term>(terms : Terms<Id, Term>, termlist : Term[]) : Term[] {
