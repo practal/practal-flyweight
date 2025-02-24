@@ -1,6 +1,7 @@
 import { arrayEqual, HashSet } from "things"
 import { Terms } from "./terms.js"
 import { Sequent } from "./theory.js"
+import { Subst } from "./subst.js"
 
 export enum ProofKind {
     Theorem = "Theorem",
@@ -18,16 +19,29 @@ export enum ProofKind {
     CutSucc = "CutSucc"
 }
 
-export type Proof<Id, Term> = PTheorem<Id> | PAssume<Term>
+export type Proof<Id, Term> = PTheorem<Id, Term> | PAssume<Term> | PSubst<Id, Term>
 
-export type PTheorem<Id> = {
+export type PTheorem<Id, Term> = {
     kind : ProofKind.Theorem,
+    sequent : Sequent<Term>,
     label : Id
 }
 
 export type PAssume<Term> = {
     kind : ProofKind.Assume,
+    sequent : Sequent<Term>,
     term : Term
+}
+
+export type PSubst<Id, Term> = {
+    kind : ProofKind.Subst,
+    sequent : Sequent<Term>,
+    subst : Subst<Id, Term>,
+    proof : Proof<Id, Term>
+}
+
+export function sequentOfProof<Id, Term>(proof : Proof<Id, Term>) : Sequent<Term> {
+    return proof.sequent;
 }
 
 export function removeDuplicatesInTermList<Id, Term>(terms : Terms<Id, Term>, termlist : Term[]) : Term[] {

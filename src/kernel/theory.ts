@@ -5,11 +5,12 @@ import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
 import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume } from "./proof.js";
 import { isNormalHead } from "./term-utils.js";
 import { displayFreeVar, freeVarsOf, listFreeVars, subtractFreeVars } from "./free-vars.js";
+import { applyRegularSubst, Subst, validateSubst } from "./subst.js";
 
 export type Sequent<Term> = { antecedents : Term[], succedents : Term[] }
 
 // Obviously not safe, but will do (for now).
-export type Theorem<Id, Term> = { theory : Theory<Id, Term>, proof : Proof<Id, Term>, sequent : Sequent<Term>}
+export type Theorem<Id, Term> = { theory : Theory<Id, Term>, proof : Proof<Id, Term> }
 
 export interface Theory<Id, Term> {
 
@@ -47,12 +48,14 @@ export interface Theory<Id, Term> {
     
     assume(template : Term) : Theorem<Id, Term>
     
+    substitute(subst : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
+    
 }
 
 type Axioms<Id, Term> = RedBlackMap<Id, Sequent<Term>>
 type Definition<Term> = { head : Term, definiens : Term }
 type Definitions<Id, Term> = RedBlackMap<Id, Definition<Term>>
-type Theorems<Id, Term> = RedBlackMap<Id, { proof : Proof<Id, Term>, sequent : Sequent<Term> }>
+type Theorems<Id, Term> = RedBlackMap<Id, Proof<Id, Term>>
 
 function mkEquals<Id, Term>(terms : Terms<Id, Term>, lhs : Term, rhs : Term) : Term {
     const eq = terms.mkId("equals");
@@ -93,26 +96,26 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     #axiom(label : Id) : Theorem<Id, Term> {
         const s = this.#axioms.get(label);
         if (s === undefined) throw new Error("No such axiom: " + this.terms.ids.display(label));
-        const proof : PTheorem<Id> = { kind : ProofKind.Theorem, label: label };
-        return { theory : this, proof : proof, sequent : s };
+        const proof : PTheorem<Id, Term> = { kind : ProofKind.Theorem, label: label, sequent : s };
+        return { theory : this, proof : proof };
     }
     
     #definition(label : Id) : Theorem<Id, Term> {
         const d = this.#definitions.get(label);
         if (d === undefined) throw new Error("No such definition: " + this.terms.ids.display(label));
-        const proof : PTheorem<Id> = { kind : ProofKind.Theorem, label : label };
         const eq = mkEquals(this.terms, d.head, d.definiens);
         this.#validate(eq);
         const sequent : Sequent<Term> = { 
             antecedents : [], 
             succedents : [ mkEquals(this.terms, d.head, d.definiens) ]
         };
-        return { theory : this, proof : proof, sequent : sequent };
+        const proof : PTheorem<Id, Term> = { kind : ProofKind.Theorem, label : label, sequent : sequent };
+        return { theory : this, proof : proof };
     }
         
     theorem(label : Id) : Theorem<Id, Term> {
-        let th = this.#theorems.get(label);
-        if (th !== undefined) return { theory : this, proof: th.proof, sequent: th.sequent };
+        let proof = this.#theorems.get(label);
+        if (proof !== undefined) return { theory : this, proof: proof };
         if (this.isAxiom(label)) return this.#axiom(label);
         if (this.isDefinition(label)) return this.#definition(label);
         throw new Error("No such theorem: " + this.terms.ids.display(label));
@@ -182,7 +185,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     #axiomViaImport(label : Id, axiom : Sequent<Term>) : Thy<Id, Term> {
         if (this.hasTheorem(label)) {
             const currentAxiom = this.theorem(label);
-            if (!equalSequents(this.terms, currentAxiom.sequent, axiom)) 
+            if (!equalSequents(this.terms, currentAxiom.proof.sequent, axiom)) 
                 throw new Error("Cannot import theory, imported axiom '" + 
                     this.terms.ids.display(label) + "' differs from present theorem.");
             return this;
@@ -191,15 +194,15 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         }
     }
     
-    #noteViaImport(label : Id, proof : Proof<Id, Term>, sequent : Sequent<Term>) : Thy<Id, Term> {
+    #noteViaImport(label : Id, proof : Proof<Id, Term>) : Thy<Id, Term> {
         if (this.hasTheorem(label)) {
             const currentThm = this.theorem(label);
-            if (!equalSequents(this.terms, currentThm.sequent, sequent)) 
+            if (!equalSequents(this.terms, currentThm.proof.sequent, proof.sequent)) 
                 throw new Error("Cannot import theory, imported theorem '" + 
                     this.terms.ids.display(label) + "' differs from present theorem.");
             return this;
         } else {
-            const newTheorems = this.#theorems.set(label, { proof : proof, sequent: sequent });
+            const newTheorems = this.#theorems.set(label, proof);
             return new Thy(this.terms, this.sig, this.#axioms, this.#definitions, newTheorems);
         }
     }
@@ -207,7 +210,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     #defineViaImport(label : Id, d : Definition<Term>, sequent : Sequent<Term>) : Thy<Id, Term> {
         if (this.hasTheorem(label)) {
             const currentThm = this.theorem(label);
-            if (!equalSequents(this.terms, currentThm.sequent, sequent)) 
+            if (!equalSequents(this.terms, currentThm.proof.sequent, sequent)) 
                 throw new Error("Cannot import theory, imported definition '" + 
                     this.terms.ids.display(label) + "' differs from present theorem.");
             return this;
@@ -236,7 +239,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         if (this.hasTheorem(label)) 
             throw new Error("There is already a theorem named '" + 
                 this.terms.ids.display(label) + "'.");
-        const newTheorems = this.#theorems.set(label, { proof : thm.proof, sequent: thm.sequent });
+        const newTheorems = this.#theorems.set(label, thm.proof);
         return new Thy(this.terms, this.sig, this.#axioms, this.#definitions, newTheorems);
     }
 
@@ -249,16 +252,16 @@ class Thy<Id, Term> implements Theory<Id, Term> {
             }
         }
         for (const label of thy.listAxioms()) {
-            const axiom = thy.theorem(label).sequent;
+            const axiom = thy.theorem(label).proof.sequent;
             currentTheory = currentTheory.#axiomViaImport(label, axiom);
         }
         for (const label of thy.listDefinitions()) {
             const d = force(thy.#definitions.get(label));
-            const sequent = thy.theorem(label).sequent;
+            const sequent = thy.theorem(label).proof.sequent;
             currentTheory = currentTheory.#defineViaImport(label, d, sequent);
         }
-        for (const [label, th] of thy.#theorems) {
-            currentTheory = currentTheory.#noteViaImport(label, th.proof, th.sequent);
+        for (const [label, proof] of thy.#theorems) {
+            currentTheory = currentTheory.#noteViaImport(label, proof);
         }
         return currentTheory;
     }
@@ -273,9 +276,28 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     
     assume(term : Term) : Theorem<Id, Term> {
         this.#validate(term);
-        const proof : PAssume<Term> = { kind : ProofKind.Assume, term : term };
-        return { theory : this, proof : proof, 
-            sequent : { antecedents : [term], succedents : [term] } };
+        const proof : PAssume<Term> = { 
+            kind : ProofKind.Assume, 
+            sequent : { antecedents : [term], succedents : [term] },
+            term : term 
+        };
+        return { theory : this, proof : proof };
+    }
+    
+    substitute(subst : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        this.checkTheory(theorem);
+        validateSubst(this.sig, this.terms, subst);
+        const sequent : Sequent<Term> = {
+            antecedents: theorem.proof.sequent.antecedents.map(t => 
+                applyRegularSubst(this.terms, t, subst)),
+            succedents: theorem.proof.sequent.succedents.map(t =>
+                applyRegularSubst(this.terms, t, subst))
+        };
+        const proof : Proof<Id, Term> = { 
+            kind: ProofKind.Subst, sequent : sequent, 
+            subst: subst, proof: theorem.proof
+        }
+        return { theory : this, proof : proof };
     }
         
 }

@@ -8,3 +8,4 @@ export * from "./parser.js";
 export * from "./theory.js";
 export * from "./validate.js";
 export * from "./proof.js";
+export * from "./subst.js";

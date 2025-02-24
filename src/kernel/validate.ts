@@ -28,11 +28,21 @@ export function validateTerm<Id, Term>(sig : Signature<Id>, terms : Terms<Id, Te
             }
             case TermKind.varapp: {
                 const [_, args] = terms.destVarApp(term);
-                for (const arg of args) validate(level, arg);
+                for (const arg of args) {
+                    if (terms.arityOfTemplate(arg) !== 0) {
+                        throw new Error("Arity of variable argument is not zero but " + 
+                            terms.arityOfTemplate(arg));
+                    }
+                    validate(level, arg);
+                }
                 break;
             }
             case TermKind.template: {
                 const [binders, body] = terms.destTemplate(term);
+                if (terms.arityOfTemplate(body) !== 0) {
+                    throw new Error("Arity of template body is not zero but " + 
+                        terms.arityOfTemplate(body));
+                }
                 validate(level + binders.length, body);
                 break;
             }
