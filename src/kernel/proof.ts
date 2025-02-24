@@ -1,6 +1,6 @@
 import { arrayEqual, HashSet } from "things"
 import { Terms } from "./terms.js"
-import { Sequent } from "./theory.js"
+import { Binder, Sequent } from "./theory.js"
 import { Subst } from "./subst.js"
 
 export enum ProofKind {
@@ -25,6 +25,8 @@ export type Proof<Id, Term> =
     | PSubst<Id, Term>
     | PAddAnte<Id, Term>
     | PAddSucc<Id, Term>
+    | PBindAnte<Id, Term>
+    | PBindSucc<Id, Term>
 
 export type PTheorem<Id, Term> = {
     kind : ProofKind.Theorem,
@@ -59,6 +61,21 @@ export type PAddSucc<Id, Term> = {
     proof : Proof<Id, Term>
 }
 
+export type PBindAnte<Id, Term> = {
+    kind : ProofKind.BindAnte,
+    sequent : Sequent<Term>,
+    term : Term,
+    binders : Binder<Id>[],
+    proof : Proof<Id, Term>
+}
+
+export type PBindSucc<Id, Term> = {
+    kind : ProofKind.BindSucc,
+    sequent : Sequent<Term>,
+    term : Term,
+    binders : Binder<Id>[],
+    proof : Proof<Id, Term>
+}
 
 export function sequentOfProof<Id, Term>(proof : Proof<Id, Term>) : Sequent<Term> {
     return proof.sequent;

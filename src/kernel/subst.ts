@@ -1,4 +1,4 @@
-import { assertNever, Data, int, nat, RedBlackMap } from "things";
+import { assertNever, Data, HashMap, int, nat, RedBlackMap } from "things";
 import { Signature } from "./signature.js";
 import { TermKind, Terms } from "./terms.js";
 import { validateTerm } from "./validate.js";
@@ -155,4 +155,41 @@ export function applyRegularSubst<Id, Term>(terms : Terms<Id, Term>,
     }
     
     return apply(term);
+}
+
+export function substVars<Id, Term>(terms : Terms<Id, Term>, 
+    boundVars : Map<nat, nat>, freeVars : HashMap<Id, nat>, term : Term) : Term 
+{
+    function subst(level : nat, term : Term) : Term {
+        const termKind = terms.termKindOf(term);
+        switch (termKind) {
+            case TermKind.bound: {
+                const index = terms.destBoundVar(term);
+                if (index >= level) {
+                    const b = boundVars.get(index - level);
+                    if (b !== undefined) return terms.mkBoundVar(b + level);
+                }
+                return term;
+            }
+            case TermKind.varapp: {
+                const [x, args] = terms.destVarApp(term);
+                if (args.length === 0) {
+                    const b = freeVars.get(x);
+                    if (b !== undefined) return terms.mkBoundVar(b + level);
+                }
+                return terms.mkVarApp(x, args.map(t => subst(level, t)));
+            }
+            case TermKind.absapp: {
+                const absapp = terms.destAbsApp(term);
+                return terms.mkAbsApp(absapp.map(([id, args]) => 
+                    [id, args.map(t => subst(level, t))]));
+            }
+            case TermKind.template: {
+                const [binders, body] = terms.destTemplate(term);
+                return terms.mkTemplate(binders, subst(level + binders.length, body));
+            }
+            default: assertNever(termKind);
+        }
+    }
+    return subst(0, term);
 }

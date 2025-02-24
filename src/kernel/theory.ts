@@ -1,16 +1,30 @@
-import { force, freeze, RedBlackMap } from "things";
+import { force, freeze, HashMap, nat, RedBlackMap } from "things";
 import { AbsSig, AbsSigSpec, emptySignature, equalAbsSig, Signature, specOfAbsSig } from "./signature.js";
 import { Terms } from "./terms.js";
 import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
-import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume, PAddAnte, PAddSucc } from "./proof.js";
+import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume, PAddAnte, PAddSucc, PBindAnte, PBindSucc, removeDuplicatesInTermList } from "./proof.js";
 import { isNormalHead } from "./term-utils.js";
 import { displayFreeVar, freeVarsOf, listFreeVars, subtractFreeVars } from "./free-vars.js";
-import { applyRegularSubst, Subst, validateSubst } from "./subst.js";
+import { applyRegularSubst, Subst, substVars, validateSubst } from "./subst.js";
 
 export type Sequent<Term> = { antecedents : Term[], succedents : Term[] }
 
 // Obviously not safe, but will do (for now).
 export type Theorem<Id, Term> = { theory : Theory<Id, Term>, proof : Proof<Id, Term> }
+
+export type Binder<Id> = BindIndex | BindVar<Id>
+
+export type BindIndex = {
+    index : nat
+}
+
+export type BindVar<Id> = {
+    var : Id
+}
+
+export function isBindIndex<Id>(binder : Binder<Id>) : binder is BindIndex {
+    return typeof ((binder as BindIndex)?.index) === "number";
+}
 
 export interface Theory<Id, Term> {
 
@@ -46,7 +60,7 @@ export interface Theory<Id, Term> {
      * Proof rules
      */
     
-    assume(template : Term) : Theorem<Id, Term>
+    assume(term : Term) : Theorem<Id, Term>
     
     subst(substitution : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
     
@@ -54,7 +68,9 @@ export interface Theory<Id, Term> {
 
     addSucc(term : Term, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
 
-    
+    bindAnte(term : Term, binders : Binder<Id>[], theorem : Theorem<Id, Term>) : Theorem<Id, Term>
+
+    bindSucc(term : Term, binders : Binder<Id>[], theorem : Theorem<Id, Term>) : Theorem<Id, Term>
 }
 
 type Axioms<Id, Term> = RedBlackMap<Id, Sequent<Term>>
@@ -235,12 +251,12 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     }
     
     
-    checkTheory(theorem : Theorem<Id, Term>) {
+    #checkTheory(theorem : Theorem<Id, Term>) {
         if (theorem.theory !== this) throw new Error("Theorem is not compatible with this theory.");
     }
     
     note(label : Id, thm : Theorem<Id, Term>) : Theory<Id, Term> {
-        this.checkTheory(thm);
+        this.#checkTheory(thm);
         if (this.hasTheorem(label)) 
             throw new Error("There is already a theorem named '" + 
                 this.terms.ids.display(label) + "'.");
@@ -290,7 +306,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     }
     
     subst(substitution : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
-        this.checkTheory(theorem);
+        this.#checkTheory(theorem);
         validateSubst(this.sig, this.terms, substitution);
         const sequent : Sequent<Term> = {
             antecedents: theorem.proof.sequent.antecedents.map(t => 
@@ -308,7 +324,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     }
     
     addAnte(term : Term, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
-        this.checkTheory(theorem);
+        this.#checkTheory(theorem);
         this.#validate(term);
         const antecedents = [term, ...theorem.proof.sequent.antecedents];
         const succedents = theorem.proof.sequent.succedents;
@@ -325,7 +341,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     }
     
     addSucc(term : Term, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
-        this.checkTheory(theorem);
+        this.#checkTheory(theorem);
         this.#validate(term);
         const antecedents = theorem.proof.sequent.antecedents;
         const succedents = [term, ...theorem.proof.sequent.succedents];
@@ -341,7 +357,82 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         return { theory : this, proof : proof };
     }
     
+    #changeBinders(term : Term, binders : Binder<Id>[]) : Term {
+        const [termBinders, termBody] = this.terms.destTemplate(term);
+        let boundVars : Map<nat, nat> = new Map();
+        let freeVars : HashMap<Id, nat> = new HashMap(this.terms.ids);
+        let newBinders : Id[] = [];
+        for (let i = 0; i < binders.length; i++) {
+            const binder = binders[i];
+            if (isBindIndex(binder)) {
+                if (boundVars.has(binder.index)) 
+                    throw new Error("checkBinders: duplicate binder index " + binder.index);  
+                if (binder.index >= termBinders.length) 
+                    throw new Error("checkBinders: invalid binder index " + binder.index); 
+                newBinders.push(termBinders[binder.index]);
+                boundVars.set(binder.index, i);
+            } else {
+                newBinders.push(binder.var);
+                freeVars.putIfNew(binder.var, () => i);
+            }
+        }
+        const result = this.terms.mkTemplate(newBinders, 
+            substVars(this.terms, boundVars, freeVars, termBody));
+        this.#validate(result);
+        return result;
+    }
     
+    #replaceTerm(termlist : Term[], term : Term, replacement : Term) : Term[] | undefined {
+        for (let i = 0; i < 0; i++) {
+            if (this.terms.equal(termlist[i], term)) {
+                const replaced = [...termlist];
+                replaced[i] = replacement;
+                return removeDuplicatesInTermList(this.terms, replaced);
+            }
+        } 
+        return undefined;
+    }
+    
+    bindAnte(term : Term, binders : Binder<Id>[], theorem : Theorem<Id, Term>) : Theorem<Id, Term> 
+    {
+        this.#checkTheory(theorem);
+        const changed = this.#changeBinders(term, binders);   
+        const antecedents = this.#replaceTerm(theorem.proof.sequent.antecedents, term, changed);
+        if (antecedents === undefined) throw new Error("bindAnte: no such term found.");
+        const sequent : Sequent<Term> = { 
+            antecedents : antecedents, 
+            succedents : theorem.proof.sequent.succedents 
+        };
+        const proof : PBindAnte<Id, Term> = {
+            kind : ProofKind.BindAnte,
+            sequent : sequent,
+            term : term,
+            binders : binders,
+            proof : theorem.proof
+        };
+        return { theory : this, proof : proof };
+    }
+
+    bindSucc(term : Term, binders : Binder<Id>[], theorem : Theorem<Id, Term>) : Theorem<Id, Term> 
+    {
+        this.#checkTheory(theorem);
+        const changed = this.#changeBinders(term, binders);   
+        const succedents = this.#replaceTerm(theorem.proof.sequent.succedents, term, changed);
+        if (succedents === undefined) throw new Error("bindSucc: no such term found.");
+        const sequent : Sequent<Term> = { 
+            antecedents : theorem.proof.sequent.antecedents, 
+            succedents : succedents 
+        };
+        const proof : PBindSucc<Id, Term> = {
+            kind : ProofKind.BindSucc,
+            sequent : sequent,
+            term : term,
+            binders : binders,
+            proof : theorem.proof
+        };
+        return { theory : this, proof : proof };
+    }
+
 }
 freeze(Thy);
 
