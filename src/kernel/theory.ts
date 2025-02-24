@@ -48,7 +48,7 @@ export interface Theory<Id, Term> {
     
     assume(template : Term) : Theorem<Id, Term>
     
-    substitute(subst : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
+    subst(substitution : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
     
 }
 
@@ -284,22 +284,22 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         return { theory : this, proof : proof };
     }
     
-    substitute(subst : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+    subst(substitution : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
         this.checkTheory(theorem);
-        validateSubst(this.sig, this.terms, subst);
+        validateSubst(this.sig, this.terms, substitution);
         const sequent : Sequent<Term> = {
             antecedents: theorem.proof.sequent.antecedents.map(t => 
-                applyRegularSubst(this.terms, t, subst)),
+                applyRegularSubst(this.terms, t, substitution)),
             succedents: theorem.proof.sequent.succedents.map(t =>
-                applyRegularSubst(this.terms, t, subst))
+                applyRegularSubst(this.terms, t, substitution))
         };
         const proof : Proof<Id, Term> = { 
             kind: ProofKind.Subst, sequent : sequent, 
-            subst: subst, proof: theorem.proof
+            subst: substitution, proof: theorem.proof
         }
         return { theory : this, proof : proof };
     }
-        
+    
 }
 freeze(Thy);
 
