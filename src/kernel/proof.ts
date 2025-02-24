@@ -19,7 +19,12 @@ export enum ProofKind {
     CutSucc = "CutSucc"
 }
 
-export type Proof<Id, Term> = PTheorem<Id, Term> | PAssume<Term> | PSubst<Id, Term>
+export type Proof<Id, Term> = 
+      PTheorem<Id, Term> 
+    | PAssume<Term> 
+    | PSubst<Id, Term>
+    | PAddAnte<Id, Term>
+    | PAddSucc<Id, Term>
 
 export type PTheorem<Id, Term> = {
     kind : ProofKind.Theorem,
@@ -39,6 +44,21 @@ export type PSubst<Id, Term> = {
     subst : Subst<Id, Term>,
     proof : Proof<Id, Term>
 }
+
+export type PAddAnte<Id, Term> = {
+    kind : ProofKind.AddAnte,
+    sequent : Sequent<Term>,
+    term : Term,
+    proof : Proof<Id, Term>
+}
+
+export type PAddSucc<Id, Term> = {
+    kind : ProofKind.AddSucc,
+    sequent : Sequent<Term>,
+    term : Term,
+    proof : Proof<Id, Term>
+}
+
 
 export function sequentOfProof<Id, Term>(proof : Proof<Id, Term>) : Sequent<Term> {
     return proof.sequent;

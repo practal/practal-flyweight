@@ -2,7 +2,7 @@ import { force, freeze, RedBlackMap } from "things";
 import { AbsSig, AbsSigSpec, emptySignature, equalAbsSig, Signature, specOfAbsSig } from "./signature.js";
 import { Terms } from "./terms.js";
 import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
-import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume } from "./proof.js";
+import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume, PAddAnte, PAddSucc } from "./proof.js";
 import { isNormalHead } from "./term-utils.js";
 import { displayFreeVar, freeVarsOf, listFreeVars, subtractFreeVars } from "./free-vars.js";
 import { applyRegularSubst, Subst, validateSubst } from "./subst.js";
@@ -49,6 +49,11 @@ export interface Theory<Id, Term> {
     assume(template : Term) : Theorem<Id, Term>
     
     subst(substitution : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
+    
+    addAnte(term : Term, theorem : Theorem<Id, Term>) : Theorem<Id, Term> 
+
+    addSucc(term : Term, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
+
     
 }
 
@@ -294,11 +299,48 @@ class Thy<Id, Term> implements Theory<Id, Term> {
                 applyRegularSubst(this.terms, t, substitution))
         };
         const proof : Proof<Id, Term> = { 
-            kind: ProofKind.Subst, sequent : sequent, 
-            subst: substitution, proof: theorem.proof
+            kind: ProofKind.Subst, 
+            sequent : removeDuplicatesInSequent(this.terms, sequent), 
+            subst: substitution, 
+            proof: theorem.proof
         }
         return { theory : this, proof : proof };
     }
+    
+    addAnte(term : Term, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        this.checkTheory(theorem);
+        this.#validate(term);
+        const antecedents = [term, ...theorem.proof.sequent.antecedents];
+        const succedents = theorem.proof.sequent.succedents;
+        antecedents.push(term);
+        const proof : PAddAnte<Id, Term> = { 
+            kind : ProofKind.AddAnte,
+            sequent : removeDuplicatesInSequent(this.terms, {
+                antecedents: antecedents,
+                succedents : succedents}),
+            term : term,
+            proof : theorem.proof
+        };
+        return { theory : this, proof : proof };
+    }
+    
+    addSucc(term : Term, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        this.checkTheory(theorem);
+        this.#validate(term);
+        const antecedents = theorem.proof.sequent.antecedents;
+        const succedents = [term, ...theorem.proof.sequent.succedents];
+        antecedents.push(term);
+        const proof : PAddSucc<Id, Term> = { 
+            kind : ProofKind.AddSucc,
+            sequent : removeDuplicatesInSequent(this.terms, {
+                antecedents: antecedents,
+                succedents : succedents}),
+            term : term,
+            proof : theorem.proof
+        };
+        return { theory : this, proof : proof };
+    }
+    
     
 }
 freeze(Thy);
