@@ -1,4 +1,4 @@
-import { nat } from "things";
+import { assertNever, nat } from "things";
 import { TermKind, Terms } from "./terms.js";
 
 export function destNormalVariableTemplate<Id, Term>(terms : Terms<Id, Term>, term : Term) : 
@@ -32,5 +32,50 @@ export function isNormalHead<Id, Term>(terms : Terms<Id, Term>, term : Term) : b
         }
     }
     return true;
+}
+
+export function isFreeWithArityZero<Id, Term>(terms : Terms<Id, Term>, x : Id, term : Term)
+    : boolean 
+{
+    function isFree(term : Term) : boolean {
+        const termKind = terms.termKindOf(term);
+        switch (termKind) {
+            case TermKind.bound: return false;
+            case TermKind.template: return isFree(terms.destTemplate(term)[1]);
+            case TermKind.varapp: {
+                const [y, args] = terms.destVarApp(term);
+                if (args.length === 0 && terms.ids.equal(x, y)) {
+                    return true;
+                } 
+                for (const arg of args) {
+                    if (isFree(arg)) return true;
+                }
+                return false;
+            }
+            case TermKind.absapp: {
+                const absapp = terms.destAbsApp(term);
+                for (const [_, args] of absapp) {
+                    for (const arg of args) {
+                        if (isFree(arg)) return true;
+                    }
+                }
+                return false;
+            }
+            case TermKind.template: {
+                const [_, body] = terms.destTemplate(term);
+                return isFree(body);
+            }
+            default: assertNever(termKind);
+        }
+    }
+    return isFree(term);
+}
+
+export function isFreeVar<Id, Term>(terms : Terms<Id, Term>, x : Id, arity : nat, term : Term)
+    : boolean 
+{
+    if (terms.termKindOf(term) !== TermKind.varapp) return false;
+    const [y, args] = terms.destVarApp(term);
+    return args.length === arity && terms.ids.equal(x, y);
 }
 

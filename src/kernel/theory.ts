@@ -2,8 +2,8 @@ import { force, freeze, HashMap, nat, RedBlackMap } from "things";
 import { AbsSig, AbsSigSpec, emptySignature, equalAbsSig, Signature, specOfAbsSig } from "./signature.js";
 import { Terms } from "./terms.js";
 import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
-import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume, PAddAnte, PAddSucc, PBindAnte, PBindSucc, removeDuplicatesInTermList } from "./proof.js";
-import { isNormalHead } from "./term-utils.js";
+import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume, PAddAnte, PAddSucc, PBindAnte, PBindSucc, removeDuplicatesInTermList, PFreeAnte, PFreeSucc } from "./proof.js";
+import { isFreeVar, isFreeWithArityZero, isNormalHead } from "./term-utils.js";
 import { displayFreeVar, freeVarsOf, listFreeVars, subtractFreeVars } from "./free-vars.js";
 import { applyRegularSubst, Subst, substVars, validateSubst } from "./subst.js";
 
@@ -71,6 +71,10 @@ export interface Theory<Id, Term> {
     bindAnte(term : Term, binders : Binder<Id>[], theorem : Theorem<Id, Term>) : Theorem<Id, Term>
 
     bindSucc(term : Term, binders : Binder<Id>[], theorem : Theorem<Id, Term>) : Theorem<Id, Term>
+    
+    freeAnte(id : Id, theorem : Theorem<Id, Term>) : Theorem<Id, Term> 
+    
+    freeSucc(id : Id, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
 }
 
 type Axioms<Id, Term> = RedBlackMap<Id, Sequent<Term>>
@@ -432,7 +436,65 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         };
         return { theory : this, proof : proof };
     }
-
+    
+    #removeFree(id : Id, termlist : Term[]) : Term[] | undefined {
+        const result : Term[] = [];
+        for (const t of termlist) {
+            if (!isFreeVar(this.terms, id, 0, t)) {
+                if (isFreeWithArityZero(this.terms, id, t)) return undefined;
+                result.push(t);
+            }
+        }
+        return result;
+    }
+    
+    #isFreeWithArityZero(id : Id, termlist : Term[]) : boolean {
+        for (const t of termlist) {
+            if (isFreeWithArityZero(this.terms, id, t)) return true;
+        }
+        return false;
+    }
+    
+    freeAnte(id : Id, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        this.#checkTheory(theorem);
+        const antecedents = this.#removeFree(id, theorem.proof.sequent.antecedents);
+        if (antecedents === undefined || 
+            this.#isFreeWithArityZero(id, theorem.proof.sequent.succedents)) 
+            throw new Error("freeAnte: variable '" + this.terms.ids.display(id) + 
+                "' cannot be discarded.");
+        const sequent = {
+            antecedents: antecedents,
+            succedents : theorem.proof.sequent.succedents
+        };
+        const proof : PFreeAnte<Id, Term> = {
+            kind : ProofKind.FreeAnte,
+            sequent : sequent,
+            id : id,
+            proof : theorem.proof
+        };
+        return { theory : this, proof : proof };
+    }
+    
+    freeSucc(id : Id, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        this.#checkTheory(theorem);
+        const succedents = this.#removeFree(id, theorem.proof.sequent.succedents);
+        if (succedents === undefined || 
+            this.#isFreeWithArityZero(id, theorem.proof.sequent.antecedents)) 
+            throw new Error("freeSucc: variable '" + this.terms.ids.display(id) + 
+                "' cannot be discarded.");
+        const sequent = {
+            antecedents: theorem.proof.sequent.antecedents,
+            succedents : succedents
+        };
+        const proof : PFreeSucc<Id, Term> = {
+            kind : ProofKind.FreeSucc,
+            sequent : sequent,
+            id : id,
+            proof : theorem.proof
+        };
+        return { theory : this, proof : proof };
+    }
+    
 }
 freeze(Thy);
 

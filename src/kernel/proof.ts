@@ -27,6 +27,8 @@ export type Proof<Id, Term> =
     | PAddSucc<Id, Term>
     | PBindAnte<Id, Term>
     | PBindSucc<Id, Term>
+    | PFreeAnte<Id, Term>
+    | PFreeSucc<Id, Term>
 
 export type PTheorem<Id, Term> = {
     kind : ProofKind.Theorem,
@@ -76,6 +78,21 @@ export type PBindSucc<Id, Term> = {
     binders : Binder<Id>[],
     proof : Proof<Id, Term>
 }
+
+export type PFreeAnte<Id, Term> = {
+    kind : ProofKind.FreeAnte,
+    sequent : Sequent<Term>,
+    id : Id,
+    proof : Proof<Id, Term>
+};
+
+export type PFreeSucc<Id, Term> = {
+    kind : ProofKind.FreeSucc,
+    sequent : Sequent<Term>,
+    id : Id,
+    proof : Proof<Id, Term>
+};
+
 
 export function sequentOfProof<Id, Term>(proof : Proof<Id, Term>) : Sequent<Term> {
     return proof.sequent;
