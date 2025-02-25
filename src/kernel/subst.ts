@@ -94,8 +94,8 @@ function simpleSubst<Id, Term>(terms : Terms<Id, Term>, level : nat,
                     subst(level, a, args))]));
             }
             case TermKind.varapp: {
-                const [x, args] = terms.destVarApp(term);
-                return terms.mkVarApp(x, args.map(a => subst(level, a, args)));
+                const [x, params] = terms.destVarApp(term);
+                return terms.mkVarApp(x, params.map(a => subst(level, a, args)));
             }
             case TermKind.template: {
                 const [binders, body] = terms.destTemplate(term);
@@ -122,7 +122,7 @@ function simpleApply<Id, Term>(terms : Terms<Id, Term>,
         const t = simpleSubst(terms, 0, body, liftedArgs);
         return liftTerm(terms, 0, -n, t);
     }
-    
+        
     return apply(term, args);
 }
 

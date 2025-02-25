@@ -1,8 +1,10 @@
 import { RedBlackMap } from "things";
-import { defaultTerms, Id, Sequent, Term, Theory } from "./kernel/index.js";
+import { defaultTerms, Id, newSubst, Sequent, Subst, Term, Theorem, Theory } from "./kernel/index.js";
 import { Context } from "./context.js";
 
 export const context = new Context(defaultTerms, RedBlackMap(defaultTerms.ids));
+export type Thm = Theorem<Id, Term>
+export type S = Subst<Id, Term>
 
 export function info() {
     context.info();
@@ -61,6 +63,24 @@ export function axiom(label : string,
 export function define(label : string, head : string, definiens : string) 
 {
     context.define(label, head, definiens);
+}
+
+export function assume(prop : string) : Thm 
+{
+    return context.assume(prop);
+}
+
+export function note(label : string, thm : Thm) 
+{
+    context.note(label, thm);
+}
+
+export function S(...varsAndTerms : string[]) : S {
+    return context.S(...varsAndTerms);
+}
+
+export function subst(s : S, thm : Thm) : Thm {
+    return context.subst(s, thm);
 }
 
 console.log("");

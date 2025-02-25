@@ -1,5 +1,5 @@
 import { nat, RedBlackMap } from "things";
-import { displayAbsSigSpec, emptyTheory, equalSequents, parseDeclaration, parseTerm, Sequent, Terms, Theorem, Theory, validateTerm } from "./kernel/index.js";
+import { addSubst, displayAbsSigSpec, emptyTheory, equalSequents, newSubst, parseDeclaration, parseTerm, Sequent, Subst, Terms, Theorem, Theory, validateTerm } from "./kernel/index.js";
 
 export class Context<Id, Term> {
     
@@ -23,7 +23,7 @@ export class Context<Id, Term> {
     }
 
     parse(term : string) : Term | undefined {
-        return parseTerm(this.currentTheory.sig, this.currentTheory.terms, term)
+        return parseTerm(this.currentTheory.sig, this.currentTheory.terms, term);
     }
 
     theory() : Theory<Id, Term> {
@@ -173,5 +173,32 @@ export class Context<Id, Term> {
         this.currentTheory = this.currentTheory.note(labelId, thm);    
         this.printSequent("Theorem " + label + ":", thm.proof.sequent);    
     }
+    
+    assume(prop : string) : Theorem<Id, Term> {
+        const t = this.parse(prop);
+        if (t === undefined) this.reportError("Could not parse assumption '" + prop + "'.");
+        return this.currentTheory.assume(t);
+    }
+    
+    S(...varsAndTerms : string[]) : Subst<Id, Term> {
+        if (varsAndTerms.length % 2 !== 0) 
+            throw new Error("Even number of arguments required to make substitution.");
+        let subst : Subst<Id, Term> = newSubst(this.currentTheory.terms.ids);
+        for (let i = 0; i < varsAndTerms.length; i += 2) {
+            const id = this.currentTheory.terms.mkId(varsAndTerms[i]);
+            const template = this.parse(varsAndTerms[i+1]);
+            if (template === undefined) 
+                throw new Error("S: cannot parse template '" + varsAndTerms[i+1] + "'.");
+            const arity = this.currentTheory.terms.arityOfTemplate(template);
+            //console.log("template = " + this.currentTheory.terms.display(template));
+            subst = addSubst(subst, id, arity, template);
+        }
+        return subst;
+    }
+    
+    subst(subst : Subst<Id, Term>, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        return this.currentTheory.subst(subst, theorem);
+    }
+    
     
 }
