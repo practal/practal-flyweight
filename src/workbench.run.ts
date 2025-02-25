@@ -1,10 +1,12 @@
-import { declare, axiom, endTheory, beginTheory, importTheory, define, assume, note, subst, S } from "./workbench.js";
+import { declare, axiom, endTheory, beginTheory, importTheory, define, assume, note, subst, S, addAnte, bindAnte, freeSucc, freeAnte, bindSucc } from "./workbench.js";
 
 import "./theories/Base.theory.js";
 import "./theories/Peano.theory.js";
 
 beginTheory();
-note("refl", subst(S("x", "x. A[x]"), assume("x[y]")));
+note("test", bindAnte("u. u[u]", "v w. P", addAnte("u. u[u]", subst(S("x", "x. A[x]"), assume("x[y]")))));
+note("geht-doch-Ante", freeSucc("x", bindAnte("x", "x. P", assume("x"))));
+note("geht-doch-Succ", freeAnte("x", bindSucc("x", "x. P", assume("x"))));
 endTheory("Test");
 
 

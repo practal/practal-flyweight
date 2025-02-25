@@ -83,6 +83,38 @@ export function subst(s : S, thm : Thm) : Thm {
     return context.subst(s, thm);
 }
 
+export function addAnte(term : string, thm : Thm) : Thm {
+    return context.addAnte(term, thm);
+}
+
+export function addSucc(term : string, thm : Thm) : Thm {
+    return context.addSucc(term, thm);
+}
+
+export function bindAnte(template : string, target : string, thm : Thm) : Thm {
+    return context.bindAnte(template, target, thm);
+}
+
+export function bindSucc(template : string, target : string, thm : Thm) : Thm {
+    return context.bindSucc(template, target, thm);
+}
+
+export function freeAnte(id : string, theorem : Thm) : Thm {
+    return context.freeAnte(id, theorem);
+}
+
+export function freeSucc(id : string, theorem : Thm) : Thm {
+    return context.freeSucc(id, theorem);
+}
+
+export function cutAnte(template : string, general : Thm, specific : Thm) : Thm {
+    return context.cutAnte(template, general, specific);
+}
+
+export function cutSucc(template : string, general : Thm, specific : Thm) : Thm {
+    return context.cutSucc(template, general, specific);
+}
+
 console.log("");
 console.log("Practal Flyweight — Workbench");
 console.log("=============================");

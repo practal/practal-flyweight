@@ -1,5 +1,5 @@
 import { nat, RedBlackMap } from "things";
-import { addSubst, displayAbsSigSpec, emptyTheory, equalSequents, newSubst, parseDeclaration, parseTerm, Sequent, Subst, Terms, Theorem, Theory, validateTerm } from "./kernel/index.js";
+import { addSubst, Binder, displayAbsSigSpec, emptyTheory, equalSequents, newSubst, parseDeclaration, parseTerm, Sequent, Subst, Terms, Theorem, Theory, validateTerm } from "./kernel/index.js";
 
 export class Context<Id, Term> {
     
@@ -200,5 +200,74 @@ export class Context<Id, Term> {
         return this.currentTheory.subst(subst, theorem);
     }
     
+    addAnte(term : string, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        const t = this.parse(term);
+        if (t === undefined) throw new Error("addAnte: Cannot parse term.");
+        return this.currentTheory.addAnte(t, theorem);
+    }
+    
+    addSucc(term : string, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        const t = this.parse(term);
+        if (t === undefined) throw new Error("addSucc: Cannot parse term.");
+        return this.currentTheory.addSucc(t, theorem);
+    }
+    
+    #computeBinders(template : Term, target : Term) : Binder<Id>[] {
+        const terms = this.currentTheory.terms;
+        const [templateBinders, templateBody] = terms.destTemplate(template);
+        const [targetBinders, _] = terms.destTemplate(target);
+        const binders : Binder<Id>[] = [];
+        for (const x of targetBinders) {
+            const i = templateBinders.findIndex(y => terms.ids.equal(x, y));
+            if (i < 0) binders.push({var: x}); else binders.push({index: i});
+        }
+        return binders;
+    }
+    
+    bindAnte(template : string, target : string, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        const templateT = this.parse(template);
+        if (templateT === undefined) this.reportError("bindAnte: Cannot parse template.");
+        const targetT = this.parse(target);
+        if (targetT === undefined) this.reportError("bindAnte: Cannot parse target binders.");
+        const binders = this.#computeBinders(templateT, targetT);
+        return this.currentTheory.bindAnte(templateT, binders, theorem);
+    }
+
+    bindSucc(template : string, target : string, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        const templateT = this.parse(template);
+        if (templateT === undefined) this.reportError("bindSucc: Cannot parse template.");
+        const targetT = this.parse(target);
+        if (targetT === undefined) this.reportError("bindSucc: Cannot parse target binders.");
+        const binders = this.#computeBinders(templateT, targetT);
+        return this.currentTheory.bindSucc(templateT, binders, theorem);
+    }
+    
+    freeAnte(id : string, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        return this.currentTheory.freeAnte(this.currentTheory.terms.mkId(id),
+            theorem);
+    }
+
+    freeSucc(id : string, theorem : Theorem<Id, Term>) : Theorem<Id, Term> {
+        return this.currentTheory.freeSucc(this.currentTheory.terms.mkId(id),
+            theorem);
+    }
+    
+    cutAnte(template : string, general : Theorem<Id, Term>, 
+        specific : Theorem<Id, Term>) : Theorem<Id, Term>
+    {
+        const templateT = this.parse(template);
+        if (templateT === undefined) 
+            this.reportError("cutAnte: Cannot parse template.");
+        return this.currentTheory.cutAnte(templateT, general, specific);
+    }
+    
+    cutSucc(template : string, general : Theorem<Id, Term>, 
+        specific : Theorem<Id, Term>) : Theorem<Id, Term>
+    {
+        const templateT = this.parse(template);
+        if (templateT === undefined) 
+            this.reportError("cutSucc: Cannot parse template.");
+        return this.currentTheory.cutSucc(templateT, general, specific);
+    }
     
 }

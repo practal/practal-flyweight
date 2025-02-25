@@ -395,7 +395,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
     }
     
     #replaceTerm(termlist : Term[], term : Term, replacement : Term) : Term[] | undefined {
-        for (let i = 0; i < 0; i++) {
+        for (let i = 0; i < termlist.length; i++) {
             if (this.terms.equal(termlist[i], term)) {
                 const replaced = [...termlist];
                 replaced[i] = replacement;
