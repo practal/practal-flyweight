@@ -34,9 +34,16 @@ export function isNormalHead<Id, Term>(terms : Terms<Id, Term>, term : Term) : b
     return true;
 }
 
-export function isFreeWithArityZero<Id, Term>(terms : Terms<Id, Term>, x : Id, term : Term)
+export function isFreeWithArityZero<Id, Term>(terms : Terms<Id, Term>, xs : Id[], term : Term)
     : boolean 
 {
+    if (xs.length === 0) return false;
+    function eq(y : Id) : boolean {
+        for (const x of xs) {
+            if (terms.ids.equal(x, y)) return true;
+        }
+        return false;
+    }
     function isFree(term : Term) : boolean {
         const termKind = terms.termKindOf(term);
         switch (termKind) {
@@ -44,7 +51,7 @@ export function isFreeWithArityZero<Id, Term>(terms : Terms<Id, Term>, x : Id, t
             case TermKind.template: return isFree(terms.destTemplate(term)[1]);
             case TermKind.varapp: {
                 const [y, args] = terms.destVarApp(term);
-                if (args.length === 0 && terms.ids.equal(x, y)) {
+                if (args.length === 0 && eq(y)) {
                     return true;
                 } 
                 for (const arg of args) {
@@ -70,12 +77,3 @@ export function isFreeWithArityZero<Id, Term>(terms : Terms<Id, Term>, x : Id, t
     }
     return isFree(term);
 }
-
-export function isFreeVar<Id, Term>(terms : Terms<Id, Term>, x : Id, arity : nat, term : Term)
-    : boolean 
-{
-    if (terms.termKindOf(term) !== TermKind.varapp) return false;
-    const [y, args] = terms.destVarApp(term);
-    return args.length === arity && terms.ids.equal(x, y);
-}
-

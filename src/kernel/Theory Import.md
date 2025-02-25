@@ -47,5 +47,5 @@ identical to s, in which case we do nothing, otherwise the import fails.
 
 The correctness of theory import can be seen by recognizing 
 that after import, all theorems will be associated with correct and 
-grounded proofs. *Grounded* means here that all proofs have no circles,
-and all of its leaves are axioms.
+grounded proofs. *Grounded* means here that a proof has no circles,
+and that all of its leaves are axioms.

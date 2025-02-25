@@ -2,10 +2,13 @@ import { force, freeze, HashMap, nat, RedBlackMap } from "things";
 import { AbsSig, AbsSigSpec, emptySignature, equalAbsSig, Signature, specOfAbsSig } from "./signature.js";
 import { Terms } from "./terms.js";
 import { absSigOfAbsApp, validateSequent, validateTerm } from "./validate.js";
-import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, PAssume, PAddAnte, PAddSucc, PBindAnte, PBindSucc, removeDuplicatesInTermList, PFreeAnte, PFreeSucc } from "./proof.js";
-import { isFreeVar, isFreeWithArityZero, isNormalHead } from "./term-utils.js";
+import { removeDuplicatesInSequent, Proof, ProofKind, equalSequents, PTheorem, 
+    PAssume, PAddAnte, PAddSucc, PBindAnte, PBindSucc, removeDuplicatesInTermList, PFreeAnte, PFreeSucc, 
+    PCutAnte,
+    PCutSucc} from "./proof.js";
+import { isFreeWithArityZero, isNormalHead } from "./term-utils.js";
 import { displayFreeVar, freeVarsOf, listFreeVars, subtractFreeVars } from "./free-vars.js";
-import { applyRegularSubst, Subst, substVars, validateSubst } from "./subst.js";
+import { applyRegularSubst, simpleSubstNoDangling, Subst, substVars, validateSubst } from "./subst.js";
 
 export type Sequent<Term> = { antecedents : Term[], succedents : Term[] }
 
@@ -75,6 +78,11 @@ export interface Theory<Id, Term> {
     freeAnte(id : Id, theorem : Theorem<Id, Term>) : Theorem<Id, Term> 
     
     freeSucc(id : Id, theorem : Theorem<Id, Term>) : Theorem<Id, Term>
+        
+    cutAnte(template : Term, general : Theorem<Id, Term>, instance : Theorem<Id, Term>) : Theorem<Id, Term>
+    
+    cutSucc(template : Term, general : Theorem<Id, Term>, instance : Theorem<Id, Term>) : Theorem<Id, Term>
+    
 }
 
 type Axioms<Id, Term> = RedBlackMap<Id, Sequent<Term>>
@@ -436,21 +444,28 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         };
         return { theory : this, proof : proof };
     }
-    
-    #removeFree(id : Id, termlist : Term[]) : Term[] | undefined {
+        
+    #removeStrictly(ids : Id[], term : Term, termlist : Term[]) : Term[] | undefined {
         const result : Term[] = [];
         for (const t of termlist) {
-            if (!isFreeVar(this.terms, id, 0, t)) {
-                if (isFreeWithArityZero(this.terms, id, t)) return undefined;
+            if (!this.terms.equal(term, t)) {
+                if (isFreeWithArityZero(this.terms, ids, t)) return undefined;
                 result.push(t);
             }
         }
+        if (result.length === termlist.length) return undefined;
         return result;
     }
     
-    #isFreeWithArityZero(id : Id, termlist : Term[]) : boolean {
+    #removeFree(id : Id, termlist : Term[]) : Term[] | undefined {
+        const v = this.terms.mkVarApp(id, []);
+        return this.#removeStrictly([id], v, termlist);
+    }
+    
+    // Returns if any of the identifiers occurs free with arity zero in any of the terms
+    #isFreeWithArityZero(ids : Id[], termlist : Term[]) : boolean {
         for (const t of termlist) {
-            if (isFreeWithArityZero(this.terms, id, t)) return true;
+            if (isFreeWithArityZero(this.terms, ids, t)) return true;
         }
         return false;
     }
@@ -459,7 +474,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         this.#checkTheory(theorem);
         const antecedents = this.#removeFree(id, theorem.proof.sequent.antecedents);
         if (antecedents === undefined || 
-            this.#isFreeWithArityZero(id, theorem.proof.sequent.succedents)) 
+            this.#isFreeWithArityZero([id], theorem.proof.sequent.succedents)) 
             throw new Error("freeAnte: variable '" + this.terms.ids.display(id) + 
                 "' cannot be discarded.");
         const sequent = {
@@ -479,7 +494,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         this.#checkTheory(theorem);
         const succedents = this.#removeFree(id, theorem.proof.sequent.succedents);
         if (succedents === undefined || 
-            this.#isFreeWithArityZero(id, theorem.proof.sequent.antecedents)) 
+            this.#isFreeWithArityZero([id], theorem.proof.sequent.antecedents)) 
             throw new Error("freeSucc: variable '" + this.terms.ids.display(id) + 
                 "' cannot be discarded.");
         const sequent = {
@@ -495,6 +510,60 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         return { theory : this, proof : proof };
     }
     
+    #instanceOf(template : Term) : [Term, Id[]] {
+        const [binders, body] = this.terms.destTemplate(template);
+        const args = binders.map(b => this.terms.mkVarApp(b, []));
+        return [simpleSubstNoDangling(this.terms, 0, body, args), binders];
+    }
+    
+    cutAnte(template: Term, general: Theorem<Id, Term>, instance: Theorem<Id, Term>): Theorem<Id, Term> {
+        this.#checkTheory(general);
+        this.#checkTheory(instance);
+        const [term, binders] = this.#instanceOf(template);
+        const modifiedGeneral = this.#removeStrictly([], template, general.proof.sequent.antecedents);
+        if (modifiedGeneral === undefined) throw new Error("cutAnte: no such template found");
+        const modifiedInstance = this.#removeStrictly(binders, term, instance.proof.sequent.succedents);
+        if (modifiedInstance === undefined) throw new Error("cutAnte: no appropriate succedent found");
+        if (this.#isFreeWithArityZero(binders, instance.proof.sequent.antecedents)) 
+            throw new Error("cutAnte: bound variables of template occur free in rest of instance");
+        const sequent : Sequent<Term> = removeDuplicatesInSequent (this.terms, {
+            antecedents: [...modifiedGeneral, ...instance.proof.sequent.antecedents],
+            succedents: [...general.proof.sequent.succedents, ...modifiedInstance]
+        });
+        const proof : PCutAnte<Id, Term> = {
+            kind: ProofKind.CutAnte,
+            sequent: sequent,
+            template: template,
+            general: general.proof,
+            instance: instance.proof
+        }
+        return { theory : this, proof : proof }
+    }
+
+    cutSucc(template: Term, general: Theorem<Id, Term>, instance: Theorem<Id, Term>): Theorem<Id, Term> {
+        this.#checkTheory(general);
+        this.#checkTheory(instance);
+        const [term, binders] = this.#instanceOf(template);
+        const modifiedGeneral = this.#removeStrictly([], template, general.proof.sequent.succedents);
+        if (modifiedGeneral === undefined) throw new Error("cutSucc: no such template found");
+        const modifiedInstance = this.#removeStrictly(binders, term, instance.proof.sequent.antecedents);
+        if (modifiedInstance === undefined) throw new Error("cutSucc: no appropriate antecedent found");
+        if (this.#isFreeWithArityZero(binders, instance.proof.sequent.succedents)) 
+            throw new Error("cutSucc: bound variables of template occur free in rest of instance");
+        const sequent : Sequent<Term> = removeDuplicatesInSequent (this.terms, {
+            antecedents: [...general.proof.sequent.antecedents, ...modifiedInstance],
+            succedents: [...modifiedGeneral, ...instance.proof.sequent.succedents]
+        });
+        const proof : PCutSucc<Id, Term> = {
+            kind: ProofKind.CutSucc,
+            sequent: sequent,
+            template: template,
+            general: general.proof,
+            instance: instance.proof
+        }
+        return { theory : this, proof : proof }
+    }
+
 }
 freeze(Thy);
 

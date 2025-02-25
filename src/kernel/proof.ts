@@ -23,12 +23,10 @@ export type Proof<Id, Term> =
       PTheorem<Id, Term> 
     | PAssume<Term> 
     | PSubst<Id, Term>
-    | PAddAnte<Id, Term>
-    | PAddSucc<Id, Term>
-    | PBindAnte<Id, Term>
-    | PBindSucc<Id, Term>
-    | PFreeAnte<Id, Term>
-    | PFreeSucc<Id, Term>
+    | PAddAnte<Id, Term> | PAddSucc<Id, Term>
+    | PBindAnte<Id, Term> | PBindSucc<Id, Term>
+    | PFreeAnte<Id, Term> | PFreeSucc<Id, Term>
+    | PCutAnte<Id, Term> | PCutSucc<Id, Term>
 
 export type PTheorem<Id, Term> = {
     kind : ProofKind.Theorem,
@@ -93,6 +91,21 @@ export type PFreeSucc<Id, Term> = {
     proof : Proof<Id, Term>
 };
 
+export type PCutAnte<Id, Term> = {
+    kind : ProofKind.CutAnte,
+    sequent : Sequent<Term>,
+    template : Term,
+    general : Proof<Id, Term>,
+    instance : Proof<Id, Term>
+}
+
+export type PCutSucc<Id, Term> = {
+    kind : ProofKind.CutSucc,
+    sequent : Sequent<Term>,
+    template : Term,
+    general : Proof<Id, Term>,
+    instance : Proof<Id, Term>
+}
 
 export function sequentOfProof<Id, Term>(proof : Proof<Id, Term>) : Sequent<Term> {
     return proof.sequent;

@@ -193,3 +193,39 @@ export function substVars<Id, Term>(terms : Terms<Id, Term>,
     }
     return subst(0, term);
 }
+
+// Here we require args to have no dangling indices.
+export function simpleSubstNoDangling<Id, Term>(terms : Terms<Id, Term>, level : nat, 
+    term : Term, args : Term[]) : Term 
+{
+    function subst(level : nat, term : Term) : Term {
+        const termKind = terms.termKindOf(term);
+        switch (termKind) {
+            case TermKind.bound: {
+                const index = terms.destBoundVar(term);
+                if (index >= level && index < level + args.length) {
+                    return args[index - level];
+                } else return term;
+            }
+            case TermKind.absapp: {
+                const absapp = terms.destAbsApp(term);
+                return terms.mkAbsApp(absapp.map(([id, args]) => [id, args.map(a => 
+                    subst(level, a))]));
+            }
+            case TermKind.varapp: {
+                const [x, args] = terms.destVarApp(term);
+                return terms.mkVarApp(x, args.map(a => subst(level, a)));
+            }
+            case TermKind.template: {
+                const [binders, body] = terms.destTemplate(term);
+                const k = binders.length;
+                const newBody = subst(level + k, body);
+                return terms.mkTemplate(binders, newBody);
+            }
+            default: assertNever(termKind);
+        }
+    }
+    
+    return subst(level, term);
+}
+
