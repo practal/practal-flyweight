@@ -6,6 +6,12 @@ export const context = new Context(defaultTerms, RedBlackMap(defaultTerms.ids));
 export type Thm = Theorem<Id, Term>
 export type S = Subst<Id, Term>
 
+let TeXMode : boolean = false;
+
+export function setTeXMode(on : boolean) {
+    TeXMode = on;
+}
+
 export function info() {
     context.info();
 }
@@ -113,6 +119,13 @@ export function cutAnte(template : string, general : Thm, specific : Thm) : Thm 
 
 export function cutSucc(template : string, general : Thm, specific : Thm) : Thm {
     return context.cutSucc(template, general, specific);
+}
+
+export function print(term : string) {
+    if (TeXMode)
+        context.printTeX(term);
+    else 
+        context.print(term);
 }
 
 console.log("");

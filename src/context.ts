@@ -1,5 +1,6 @@
 import { nat, RedBlackMap } from "things";
 import { addSubst, Binder, displayAbsSigSpec, emptyTheory, equalSequents, newSubst, parseDeclaration, parseTerm, Sequent, Subst, Terms, Theorem, Theory, validateTerm } from "./kernel/index.js";
+import { displayTermAsTeX } from "./kernel/tex.js";
 
 export class Context<Id, Term> {
     
@@ -172,6 +173,20 @@ export class Context<Id, Term> {
         const labelId = this.currentTheory.terms.mkId(label);
         this.currentTheory = this.currentTheory.note(labelId, thm);    
         this.printSequent("Theorem " + label + ":", thm.proof.sequent);    
+    }
+    
+    print(term : string) {
+        const t = this.parse(term);
+        if (t === undefined) this.reportError("Cannot parse term: '" + term + "'.");
+        validateTerm(this.currentTheory.sig, this.currentTheory.terms, t);
+        console.log("| " + this.currentTheory.terms.display(t));
+    }
+    
+    printTeX(term : string) {
+        const t = this.parse(term);
+        if (t === undefined) this.reportError("Cannot parse term: '" + term + "'.");
+        validateTerm(this.currentTheory.sig, this.currentTheory.terms, t);
+        console.log("| " + displayTermAsTeX(this.currentTheory.terms, t));
     }
     
     assume(prop : string) : Theorem<Id, Term> {
