@@ -14,7 +14,7 @@ declare("mul x y");
 declare("real-numbers");
 declare("equals x y");
 
-setTeXMode(true);
+//setTeXMode(true);
 print("exists (x. P[x])");
 print("for-all (x y. implies (less x y) P[x, y])"); 
 print("choose (x. P[x])");
