@@ -22,8 +22,8 @@
     "Minimal-Implicative-Logic": "npm run build && node dist/esm/theories/Minimal-Implicative-Logic.theory.js",
     "Minimal-Logic": "npm run build && node dist/esm/theories/Minimal-Logic.theory.js",
     "Lambda-Calculus": "npm run build && node dist/esm/theories/Lambda-Calculus.theory.js",
-    "Intuitionistic-Predicate-Calculus": "npm run build && node dist/esm/theories/Intuitionistic-Predicate-Calculus.theory.js",
-    "Classical-Predicate-Calculus": "npm run build && node dist/esm/theories/Classical-Predicate-Calculus.theory.js",
+    "Intuitionistic-Predicate-Logic": "npm run build && node dist/esm/theories/Intuitionistic-Predicate-Logic.theory.js",
+    "Classical-Predicate-Logic": "npm run build && node dist/esm/theories/Classical-Predicate-Logic.theory.js",
     "Peano": "npm run build && node dist/esm/theories/Peano.theory.js",
     "Peano-Recursion": "npm run build && node dist/esm/theories/Peano-Recursion.theory.js"
   },

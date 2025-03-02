@@ -1,7 +1,7 @@
 import { beginTheory, importTheory, axiom, endTheory } from "../workbench.js";
-import "./Intuitionistic-Predicate-Calculus.theory.js";
+import "./Intuitionistic-Predicate-Logic.theory.js";
 
 beginTheory();
-importTheory("Intuitionistic-Predicate-Calculus");
+importTheory("Intuitionistic-Predicate-Logic");
 axiom("double-negation-elim", "implies (not (not A)) A");
-endTheory("Classical-Predicate-Calculus");
+endTheory("Classical-Predicate-Logic");

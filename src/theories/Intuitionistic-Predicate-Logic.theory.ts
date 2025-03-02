@@ -11,4 +11,4 @@ axiom("for-all_1", "implies (for-all (x. A[x])) A[x]");
 axiom("for-all_2", "implies (for-all (x. implies A B[x])) (implies A (for-all (x. B[x])))");
 define("false", "false", "for-all (x. x)");
 define("not", "not A", "implies A false");
-endTheory("Intuitionistic-Predicate-Calculus");
+endTheory("Intuitionistic-Predicate-Logic");
