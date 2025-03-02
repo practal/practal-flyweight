@@ -19,6 +19,7 @@
     "cloc": "cloc src --include-lang=TypeScript",
     "Example-2": "npm run build && node dist/esm/theories/Example-2.theory.js",
     "Example-8": "npm run build && node dist/esm/theories/Example-8.theory.js",
+    "Minimal-Implicative-Logic": "npm run build && node dist/esm/theories/Minimal-Implicative-Logic.theory.js",
     "Minimal-Logic": "npm run build && node dist/esm/theories/Minimal-Logic.theory.js",
     "Lambda-Calculus": "npm run build && node dist/esm/theories/Lambda-Calculus.theory.js",
     "Intuitionistic-Predicate-Calculus": "npm run build && node dist/esm/theories/Intuitionistic-Predicate-Calculus.theory.js",
