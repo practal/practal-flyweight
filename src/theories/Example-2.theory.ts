@@ -22,4 +22,4 @@ print("nat-sum n m (i. F[i])");
 print("equals f (function real-numbers (x. mul x x))"); 
 print("x y. implies (less x y) (exists (z. and (less x z) (less z y)))"); 
 
-endTheory("Motivation");
+endTheory("Example-2");
