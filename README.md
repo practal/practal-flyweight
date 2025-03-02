@@ -1,6 +1,6 @@
 # Practal Flyweight
 
-Flyweight implementation in TypeScript of abstraction logic 
+Flyweight implementation of abstraction logic in TypeScript 
 for experimenting with abstraction logic in practice.
 
 Install with: `npm i @practal/flyweight`
