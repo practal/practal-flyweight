@@ -1,8 +1,8 @@
 import { axiom, beginTheory, declare, endTheory, importTheory } from "../workbench.js";
-import "./Minimal-Implicative-Logic.theory.js";
+import "./Implication.theory.js";
 
 beginTheory();
-importTheory("Minimal-Implicative-Logic");
+importTheory("Implication");
 declare("and A B");
 declare("or A B");
 axiom("or-intro_1", "implies A (or A B)");
