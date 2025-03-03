@@ -3,8 +3,6 @@
 Flyweight implementation of abstraction logic in TypeScript 
 for experimenting with abstraction logic in practice.
 
-Install with: `npm i @practal/flyweight`
-
 Pointers for the paper submitted to CADE-30 (you can run each example,
 for example `npm run Example-2`):
 
