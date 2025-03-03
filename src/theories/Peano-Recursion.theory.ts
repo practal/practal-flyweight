@@ -14,8 +14,8 @@ define("mul-def", "mul n m", "primrec n zero (i u. add u m)");
 define("power-def", "power n m", "primrec m one (i u. mul u n)");
 define("factorial-def", "factorial n", "primrec n one (i u. mul (succ i) u)");
 importTheory("Minimal-Logic");
-define("leq-def", "leq n m", "primrec n true (i u. or u (equals (succ i) m))");
-define("less-def", "less n m", "and (leq n m) (not-equals n m)");
+define("less-def", "less n m", "primrec m false (i u. or u (equals n i))");
+define("leq-def", "leq n m", "or (less n m) (equals n m)");
 endTheory("Peano-Primitive-Recursion");
 
 beginTheory();
