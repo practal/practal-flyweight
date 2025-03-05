@@ -1,5 +1,5 @@
 import { RedBlackMap } from "things";
-import { defaultTerms, Id, newSubst, Sequent, Subst, Term, Theorem, Theory } from "./kernel/index.js";
+import { defaultTerms, Id, newSubst, Sequent, Subst, Term, Terms, Theorem, Theory } from "./kernel/index.js";
 import { Context } from "./context.js";
 
 export const context = new Context(defaultTerms, RedBlackMap(defaultTerms.ids));
@@ -14,6 +14,10 @@ export function setTeXMode(on : boolean) {
 
 export function info() {
     context.info();
+}
+
+export function terms() : Terms<Id, Term> {
+    return context.currentTheory.terms;
 }
 
 export function parse(term : string) : Term | undefined {
@@ -71,6 +75,10 @@ export function define(label : string, head : string, definiens : string)
     context.define(label, head, definiens);
 }
 
+export function thm(label : string) : Thm {
+    return context.theorem(label);
+}
+
 export function assume(prop : string) : Thm 
 {
     return context.assume(prop);
@@ -81,7 +89,7 @@ export function note(label : string, thm : Thm)
     context.note(label, thm);
 }
 
-export function S(...varsAndTerms : string[]) : S {
+export function S(...varsAndTerms : (string | Term)[]) : S {
     return context.S(...varsAndTerms);
 }
 
@@ -113,19 +121,44 @@ export function freeSucc(id : string, theorem : Thm) : Thm {
     return context.freeSucc(id, theorem);
 }
 
-export function cutAnte(template : string, general : Thm, specific : Thm) : Thm {
+export function cutAnte(template : string | Term, general : Thm, specific : Thm) : Thm {
     return context.cutAnte(template, general, specific);
 }
 
-export function cutSucc(template : string, general : Thm, specific : Thm) : Thm {
+export function cutSucc(template : string | Term, general : Thm, specific : Thm) : Thm {
     return context.cutSucc(template, general, specific);
 }
 
-export function print(term : string) {
-    if (TeXMode)
-        context.printTeX(term);
-    else 
-        context.print(term);
+export function infer(general : Thm, specific : Thm) : Thm {
+    const c = conclOf(specific);
+    for (const p of premsOf(general)) {
+        const [_, body] = terms().destTemplate(p);
+        if (terms().equal(body, c)) {
+            return context.cutAnte(p, general, specific);
+        }
+    }
+    throw new Error("infer: cannot find premise");
+}
+
+export function conclOf(thm : Thm) : Term {
+    const succs = thm.proof.sequent.succedents;
+    if (succs.length !== 1) throw new Error("conclOf: single succedent expected.");
+    return succs[0];
+}
+
+export function premsOf(thm : Thm) : Term[] {
+    return thm.proof.sequent.antecedents;
+}
+
+export function print(t : string | Thm) {
+    if (typeof t === "string") {
+        if (TeXMode)
+            context.printTeX(t);
+        else 
+            context.print(t);
+    } else {
+        printSequent("Theorem", t.proof.sequent);
+    }
 }
 
 console.log("");

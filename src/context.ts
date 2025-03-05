@@ -23,8 +23,11 @@ export class Context<Id, Term> {
         console.log("");
     }
 
-    parse(term : string) : Term | undefined {
-        return parseTerm(this.currentTheory.sig, this.currentTheory.terms, term);
+    parse(term : string | Term) : Term | undefined {
+        if (typeof term === "string")
+            return parseTerm(this.currentTheory.sig, this.currentTheory.terms, term);
+        else
+            return term;
     }
 
     theory() : Theory<Id, Term> {
@@ -189,19 +192,26 @@ export class Context<Id, Term> {
         console.log("| " + displayTermAsTeX(this.currentTheory.terms, t));
     }
     
+    theorem(label : string) : Theorem<Id, Term> {
+        return this.currentTheory.theorem(this.currentTheory.terms.mkId(label));
+    }
+    
     assume(prop : string) : Theorem<Id, Term> {
         const t = this.parse(prop);
         if (t === undefined) this.reportError("Could not parse assumption '" + prop + "'.");
         return this.currentTheory.assume(t);
     }
     
-    S(...varsAndTerms : string[]) : Subst<Id, Term> {
+    S(...varsAndTerms : (string | Term)[]) : Subst<Id, Term> {
         if (varsAndTerms.length % 2 !== 0) 
             throw new Error("Even number of arguments required to make substitution.");
         let subst : Subst<Id, Term> = newSubst(this.currentTheory.terms.ids);
         for (let i = 0; i < varsAndTerms.length; i += 2) {
-            const id = this.currentTheory.terms.mkId(varsAndTerms[i]);
-            const template = this.parse(varsAndTerms[i+1]);
+            const idStr = varsAndTerms[i];
+            if (typeof idStr !== "string") throw new Error("variable must be a string");
+            const id = this.currentTheory.terms.mkId(idStr);
+            const termArg = varsAndTerms[i+1];
+            const template = typeof termArg === "string" ? this.parse(termArg) : termArg;
             if (template === undefined) 
                 throw new Error("S: cannot parse template '" + varsAndTerms[i+1] + "'.");
             const arity = this.currentTheory.terms.arityOfTemplate(template);
@@ -267,7 +277,7 @@ export class Context<Id, Term> {
             theorem);
     }
     
-    cutAnte(template : string, general : Theorem<Id, Term>, 
+    cutAnte(template : string | Term, general : Theorem<Id, Term>, 
         specific : Theorem<Id, Term>) : Theorem<Id, Term>
     {
         const templateT = this.parse(template);
@@ -276,7 +286,7 @@ export class Context<Id, Term> {
         return this.currentTheory.cutAnte(templateT, general, specific);
     }
     
-    cutSucc(template : string, general : Theorem<Id, Term>, 
+    cutSucc(template : string | Term, general : Theorem<Id, Term>, 
         specific : Theorem<Id, Term>) : Theorem<Id, Term>
     {
         const templateT = this.parse(template);
