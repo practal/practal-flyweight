@@ -1,5 +1,4 @@
-import { Term } from "../kernel/default-terms.js";
-import { beginTheory, importTheory, declare, axiom, define, endTheory, note, assume, Thm, thm, S, subst, conclOf, terms, infer, print } from "../workbench.js";
+import { beginTheory, importTheory, declare, axiom, define, endTheory, note, Thm, thm, S, subst, conclOf, terms, infer, print } from "../workbench.js";
 import "./Equality.theory.js";
 import { substEquals } from "./Equality.theory.js";
 import "./Implication.theory.js";
