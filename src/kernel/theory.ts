@@ -57,7 +57,7 @@ export interface Theory<Id, Term> {
     
     listTheorems() : Id[]
     
-    importTheory(thy : Theory<Id, Term>) : Theory<Id, Term> 
+    importTheory(thy : Theory<Id, Term>, allowAxioms : boolean) : Theory<Id, Term> 
     
     /**
      * Proof rules
@@ -276,7 +276,7 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         return new Thy(this.terms, this.sig, this.#axioms, this.#definitions, newTheorems);
     }
 
-    importTheory(_thy : Theory<Id, Term>) : Theory<Id, Term> {
+    importTheory(_thy : Theory<Id, Term>, allowAxioms : boolean) : Theory<Id, Term> {
         let currentTheory : Thy<Id, Term> = this;
         const thy = _thy as Thy<Id, Term>;
         for (const [_, absSigSpecs] of thy.sig.allAbsSigSpecs()) {
@@ -287,6 +287,9 @@ class Thy<Id, Term> implements Theory<Id, Term> {
         for (const label of thy.listAxioms()) {
             const axiom = thy.theorem(label).proof.sequent;
             currentTheory = currentTheory.#axiomViaImport(label, axiom);
+            if (!allowAxioms && currentTheory.#axioms.size > this.#axioms.size) {
+                throw new Error("importTheory: no new axioms allowed in import.");
+            }
         }
         for (const label of thy.listDefinitions()) {
             const d = force(thy.#definitions.get(label));

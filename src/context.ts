@@ -43,13 +43,14 @@ export class Context<Id, Term> {
         throw new Error(error);
     }
     
-    importTheory(theoryName : string) {
+    importTheory(theoryName : string, allowAxioms : boolean) {
         const theoryId = this.currentTheory.terms.mkId(theoryName);
         const thy = this.theories.get(theoryId);
         if (thy === undefined) 
             this.reportError("There is no theory '" + this.displayId(theoryId) + "' to import.");
-        this.currentTheory = this.currentTheory.importTheory(thy);
-        console.log("Imported theory '" + this.displayId(theoryId) + "'.");        
+        this.currentTheory = this.currentTheory.importTheory(thy, allowAxioms);
+        const job = allowAxioms ? "Assumed" : "Imported";
+        console.log(job + " theory '" + this.displayId(theoryId) + "'.");        
     }
 
     displayId(id : Id) : string {

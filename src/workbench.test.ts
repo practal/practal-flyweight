@@ -1,5 +1,5 @@
 import { assertCrashT, Test } from "things";
-import { declare, axiom, endTheory, beginTheory, importTheory, define } from "./workbench.js";
+import { declare, axiom, endTheory, beginTheory, assumeTheory, define } from "./workbench.js";
 
 beginTheory();
 declare("implies A B")
@@ -15,16 +15,16 @@ axiom("Equality_2", "A[y]", ["equals x y", "A[x]"]);
 endTheory("Equality");
 
 beginTheory();
-importTheory("Implication");
-importTheory("Equality");
+assumeTheory("Implication");
+assumeTheory("Equality");
 declare("false");
 axiom("ex-falso-quodlibet", "P", "false");
 define("not", "not A", "implies A false");
 endTheory("Negation");
 
 beginTheory();
-importTheory("Implication");
-importTheory("Equality");
+assumeTheory("Implication");
+assumeTheory("Equality");
 declare("Nat n");
 declare("zero");
 declare("succ n");
@@ -37,30 +37,30 @@ endTheory("PeanoSC");
 
 Test(() => {
     beginTheory();
-    importTheory("PeanoSC");
+    assumeTheory("PeanoSC");
     define("u1", "u x", "succ x");
     endTheory("u1");
 
     beginTheory();
-    importTheory("PeanoSC");
+    assumeTheory("PeanoSC");
     define("u2", "u y", "succ y");
     endTheory("u2");
     
     beginTheory();
-    importTheory("PeanoSC");
+    assumeTheory("PeanoSC");
     define("u3", "u x", "succ x");
     endTheory("u3");
 
     assertCrashT(() => {
         beginTheory();
-        importTheory("u1");
-        importTheory("u2");
+        assumeTheory("u1");
+        assumeTheory("u2");
         endTheory("u12");
     });
     
     beginTheory();
-    importTheory("u1");
-    importTheory("u3");
+    assumeTheory("u1");
+    assumeTheory("u3");
     endTheory("u13");
 
 });

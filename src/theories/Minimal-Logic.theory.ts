@@ -1,8 +1,8 @@
-import { axiom, beginTheory, declare, endTheory, importTheory } from "../workbench.js";
+import { axiom, beginTheory, declare, endTheory, assumeTheory } from "../workbench.js";
 import "./Implication.theory.js";
 
 beginTheory();
-importTheory("Implication");
+assumeTheory("Implication");
 declare("and A B");
 declare("or A B");
 axiom("or-intro_1", "implies A (or A B)");

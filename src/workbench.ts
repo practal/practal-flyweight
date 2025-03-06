@@ -32,9 +32,14 @@ export function beginTheory() {
     context.beginTheory();
 }
 
-export function importTheory(theoryName : string) {
-    context.importTheory(theoryName);
+export function assumeTheory(theoryName : string) {
+    context.importTheory(theoryName, true);
 }
+
+export function importTheory(theoryName : string) {
+    context.importTheory(theoryName, true);
+}
+
 
 export function displayId(id : Id) : string {
     return context.displayId(id);
