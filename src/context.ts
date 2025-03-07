@@ -158,7 +158,15 @@ export class Context<Id, Term> {
         this.printSequent("Axiom " + label + ":", this.currentTheory.theorem(labelId).proof.sequent);
     }  
     
-    define(label : string, head : string, definiens : string)
+    define(head : string, definiens : string)
+    {
+        const decl = parseDeclaration(this.currentTheory.sig, this.currentTheory.terms, head);
+        if (decl === undefined) this.reportError("Cannot parse head '" + head + "' of definition.");
+        const label = this.currentTheory.terms.ids.display(decl[0][0]) + "_def";
+        this.defineAs(label, head, definiens);
+    }
+    
+    defineAs(label : string, head : string, definiens : string)
     {
         const decl = parseDeclaration(this.currentTheory.sig, this.currentTheory.terms, head);
         if (decl === undefined) this.reportError("Cannot parse head '" + head + "' of definition.");
@@ -171,7 +179,7 @@ export class Context<Id, Term> {
         currentTheory = this.currentTheory.define(labelId, headT, definiensT);
         this.printSequent("Definition " + label + ":", currentTheory.theorem(labelId).proof.sequent);
         this.currentTheory = currentTheory;
-    }
+    }    
     
     note(label : string, thm : Theorem<Id, Term>) {
         const labelId = this.currentTheory.terms.mkId(label);

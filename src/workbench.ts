@@ -75,9 +75,14 @@ export function axiom(label : string,
     context.axiom(label, succedents, antecedents);
 }
 
-export function define(label : string, head : string, definiens : string) 
+export function define(head : string, definiens : string) 
 {
-    context.define(label, head, definiens);
+    context.define(head, definiens);
+}
+
+export function defineAs(label : string, head : string, definiens : string) 
+{
+    context.defineAs(label, head, definiens);
 }
 
 export function thm(label : string) : Thm {

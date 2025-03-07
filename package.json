@@ -14,7 +14,6 @@
   "scripts": {
     "build": "rm -fr dist/* && tsc -p tsconfig.json && tsc -p tsconfig-cjs.json && ./fixup",
     "rx": "npm run build && node dist/esm/rx/syntax.js",
-    "workbench": "npm run build && node dist/esm/workbench.run.js",
     "test": "npm run build && node dist/esm/package.test.js && node dist/cjs/package.test.js",
     "cloc": "cloc src --include-lang=TypeScript",
     "Example-2": "npm run build && node dist/esm/theories/Example-2.theory.js",

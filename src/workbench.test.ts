@@ -1,5 +1,5 @@
 import { assertCrashT, Test } from "things";
-import { declare, axiom, endTheory, beginTheory, includeTheory, define } from "./workbench.js";
+import { declare, axiom, endTheory, beginTheory, includeTheory, define, defineAs } from "./workbench.js";
 
 beginTheory();
 declare("implies A B")
@@ -19,7 +19,7 @@ includeTheory("Implication");
 includeTheory("Equality");
 declare("false");
 axiom("ex-falso-quodlibet", "P", "false");
-define("not", "not A", "implies A false");
+define("not A", "implies A false");
 endTheory("Negation");
 
 beginTheory();
@@ -38,17 +38,17 @@ endTheory("PeanoSC");
 Test(() => {
     beginTheory();
     includeTheory("PeanoSC");
-    define("u1", "u x", "succ x");
+    defineAs("u1", "u x", "succ x");
     endTheory("u1");
 
     beginTheory();
     includeTheory("PeanoSC");
-    define("u2", "u y", "succ y");
+    defineAs("u2", "u y", "succ y");
     endTheory("u2");
     
     beginTheory();
     includeTheory("PeanoSC");
-    define("u3", "u x", "succ x");
+    defineAs("u3", "u x", "succ x");
     endTheory("u3");
 
     assertCrashT(() => {
