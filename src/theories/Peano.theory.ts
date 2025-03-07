@@ -1,10 +1,10 @@
-import { beginTheory, assumeTheory, declare, axiom, endTheory, define } from "../workbench.js";
+import { beginTheory, includeTheory, declare, axiom, endTheory, define } from "../workbench.js";
 import "./Negation.theory.js";
 
 // Peano axioms for sequent calculus
 beginTheory();
-assumeTheory("Implication");
-assumeTheory("Equality");
+includeTheory("Implication");
+includeTheory("Equality");
 declare("Nat n");
 declare("zero");
 declare("succ n");
@@ -18,9 +18,9 @@ endTheory("PeanoSequentCalculus");
 
 // Peano axioms for natural deduction
 beginTheory();
-assumeTheory("Implication");
-assumeTheory("Equality");
-assumeTheory("Negation");
+includeTheory("Implication");
+includeTheory("Equality");
+includeTheory("Negation");
 declare("Nat n");
 declare("zero");
 declare("succ n");

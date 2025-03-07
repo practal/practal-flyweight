@@ -1,4 +1,4 @@
-import { beginTheory, assumeTheory, declare, axiom, define, endTheory, note, Thm, thm, S, subst, 
+import { beginTheory, includeTheory, declare, axiom, define, endTheory, note, Thm, thm, S, subst, 
     importTheory } from "../workbench.js";
 import "./Equality.theory.js";
 import { substEquals } from "./Equality.theory.js";
@@ -7,8 +7,8 @@ import { modusPonens } from "./Implication.theory.js";
 import "./Negation.theory.js";
 
 beginTheory();
-assumeTheory("Implication");
-assumeTheory("Equality");
+includeTheory("Implication");
+includeTheory("Equality");
 declare("for-all (x. A[x])");
 axiom("for-all_intro", "for-all (x. A[x])", "x. A[x]");
 axiom("for-all_elim", "implies (for-all (x. A[x])) A[x]");
@@ -19,7 +19,7 @@ importTheory("Negation");
 endTheory("Universal");
 
 beginTheory();
-assumeTheory("Universal");
+includeTheory("Universal");
 axiom("for-all_ext", "equals (for-all (x. A[x])) (for-all (x. B[x]))", "x. equals A[x] B[x]");
 endTheory("Universal_Ext");
 

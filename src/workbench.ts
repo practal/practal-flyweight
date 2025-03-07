@@ -32,7 +32,7 @@ export function beginTheory() {
     context.beginTheory();
 }
 
-export function assumeTheory(theoryName : string) {
+export function includeTheory(theoryName : string) {
     context.importTheory(theoryName, true);
 }
 

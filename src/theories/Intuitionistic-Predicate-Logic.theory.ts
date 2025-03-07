@@ -1,10 +1,10 @@
-import { axiom, beginTheory, declare, define, endTheory, assumeTheory } from "../workbench.js";
+import { axiom, beginTheory, declare, define, endTheory, includeTheory } from "../workbench.js";
 import "./Minimal-Logic.theory.js";
 import "./Equality.theory.js";
 
 beginTheory();
-assumeTheory("Minimal-Logic");
-assumeTheory("Equality");
+includeTheory("Minimal-Logic");
+includeTheory("Equality");
 declare("for-all (x. A[x])");
 axiom("for-all-intro", "for-all (x. A[x])", "x. A[x]");
 axiom("for-all_1", "implies (for-all (x. A[x])) A[x]");

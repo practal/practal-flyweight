@@ -1,4 +1,4 @@
-import { declare, axiom, endTheory, beginTheory, assumeTheory, define, assume, note, subst, S, addAnte, bindAnte, freeSucc, freeAnte, bindSucc, setTeXMode, print } from "./workbench.js";
+import { declare, axiom, endTheory, beginTheory, includeTheory, define, assume, note, subst, S, addAnte, bindAnte, freeSucc, freeAnte, bindSucc, setTeXMode, print } from "./workbench.js";
 
 import "./theories/Base.theory.js";
 import "./theories/Peano.theory.js";

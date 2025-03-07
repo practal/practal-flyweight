@@ -1,8 +1,8 @@
-import { axiom, beginTheory, declare, endTheory, assumeTheory } from "../workbench.js";
+import { axiom, beginTheory, declare, endTheory, includeTheory } from "../workbench.js";
 import "./Equality.theory.js";
 
 beginTheory();
-assumeTheory("Equality");
+includeTheory("Equality");
 declare("λ (x. M[x])");
 declare("app M N");
 axiom("beta", "equals (app (λ (x. M[x])) N) M[N]");
