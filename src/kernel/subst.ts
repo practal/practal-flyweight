@@ -90,7 +90,7 @@ function simpleSubst<Id, Term>(terms : Terms<Id, Term>, level : nat,
             }
             case TermKind.absapp: {
                 const absapp = terms.destAbsApp(term);
-                return terms.mkAbsApp(absapp.map(([id, args]) => [id, args.map(a => 
+                return terms.mkAbsApp(absapp.map(([id, params]) => [id, params.map(a => 
                     subst(level, a, args))]));
             }
             case TermKind.varapp: {
@@ -106,7 +106,7 @@ function simpleSubst<Id, Term>(terms : Terms<Id, Term>, level : nat,
             default: assertNever(termKind);
         }
     }
-    
+        
     return subst(level, term, args);
 }
 

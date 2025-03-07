@@ -11,7 +11,7 @@ export function displayTerm<Id, Term>(terms : BaseTerms<Id, Term>, term : Term,
         switch(kind) {
             case TermKind.bound: {
                 const index = terms.destBoundVar(term);
-                if (index < names.length) {
+                if (index >= 0 && index < names.length) {
                     const id = names[names.length - index - 1];
                     for (let i = 0; i < index; i++) {
                         if (ids.equal(id, names[names.length - i - 1])) {

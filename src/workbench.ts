@@ -20,7 +20,7 @@ export function terms() : Terms<Id, Term> {
     return context.currentTheory.terms;
 }
 
-export function parse(term : string) : Term | undefined {
+export function parse(term : string | Term) : Term | undefined {
     return context.parse(term);
 }
 
