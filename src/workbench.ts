@@ -94,9 +94,9 @@ export function assume(prop : string) : Thm
     return context.assume(prop);
 }
 
-export function note(label : string, thm : Thm) 
+export function lemma(label : string, thm : Thm) 
 {
-    context.note(label, thm);
+    context.lemma(label, thm);
 }
 
 export function S(...varsAndTerms : (string | Term)[]) : S {

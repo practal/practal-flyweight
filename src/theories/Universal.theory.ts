@@ -1,4 +1,4 @@
-import { beginTheory, includeTheory, declare, axiom, define, endTheory, note, Thm, thm, S, subst, 
+import { beginTheory, includeTheory, declare, axiom, define, endTheory, lemma, Thm, thm, S, subst, 
     importTheory } from "../workbench.js";
 import "./Equality.theory.js";
 import { substEquals } from "./Equality.theory.js";
@@ -14,7 +14,7 @@ axiom("for-all_intro", "for-all (x. A[x])", "x. A[x]");
 axiom("for-all_elim", "implies (for-all (x. A[x])) A[x]");
 axiom("for-all_distr", "implies (for-all (x. implies A B[x])) (implies A (for-all (x. B[x])))");
 define("false", "for-all (x. x)");
-note("ex-falso-quodlibet", proveExFalsoQuodLibet());
+lemma("ex-falso-quodlibet", proveExFalsoQuodLibet());
 importTheory("Negation");
 endTheory("Universal");
 

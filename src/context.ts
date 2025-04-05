@@ -181,7 +181,7 @@ export class Context<Id, Term> {
         this.currentTheory = currentTheory;
     }    
     
-    note(label : string, thm : Theorem<Id, Term>) {
+    lemma(label : string, thm : Theorem<Id, Term>) {
         const labelId = this.currentTheory.terms.mkId(label);
         this.currentTheory = this.currentTheory.note(labelId, thm);    
         this.printSequent("Theorem " + label + ":", thm.proof.sequent);    

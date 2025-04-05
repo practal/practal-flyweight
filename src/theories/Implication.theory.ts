@@ -1,5 +1,5 @@
 import { Term } from "../kernel/index.js";
-import { beginTheory, declare, axiom, endTheory, note, thm, S, subst, print, Thm, conclOf, context, terms, cutAnte, infer, assume } from "../workbench.js";
+import { beginTheory, declare, axiom, endTheory, lemma, thm, S, subst, print, Thm, conclOf, context, terms, cutAnte, infer, assume } from "../workbench.js";
 
 // This logic is also called "Minimal Implicative Logic", or "Positive Implicative Logic"
 
@@ -8,12 +8,12 @@ declare("implies A B")
 axiom("modus-ponens", "B", ["implies A B", "A"])
 axiom("implies_1", "implies A (implies B A)")
 axiom("implies_2", "implies (implies A (implies B C)) (implies (implies A B) (implies A C))")
-note("implies_weakening", proveWeakening());
-note("conditional-modus-ponens", proveConditionalModusPonens());
-note("implies_refl", proveRefl());
-note("implies_trans", proveTrans());
-note("implies_exchange", proveExchange());
-note("implies_contraction", proveContraction());
+lemma("implies_weakening", proveWeakening());
+lemma("conditional-modus-ponens", proveConditionalModusPonens());
+lemma("implies_refl", proveRefl());
+lemma("implies_trans", proveTrans());
+lemma("implies_exchange", proveExchange());
+lemma("implies_contraction", proveContraction());
 endTheory("Implication");
 
 function proveWeakening() : Thm {

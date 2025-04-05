@@ -1,12 +1,11 @@
 import { Term } from "../kernel/default-terms.js";
-import { beginTheory, declare, axiom, endTheory, conclOf, infer, print, S, subst, terms, Thm, thm, note, assume, setTeXMode, parse } from "../workbench.js";
-import { modusPonens } from "./Implication.theory.js";
+import { beginTheory, declare, axiom, endTheory, conclOf, infer, S, subst, terms, Thm, thm, lemma, assume, setTeXMode, parse } from "../workbench.js";
 
 beginTheory();
 declare("equals x y");
 axiom("equals_refl", "equals x x");
 axiom("equals_subst", "A[y]", ["equals x y", "A[x]"]);
-note("equals_sym", proveSym());
+lemma("equals_sym", proveSym());
 endTheory("Equality");
 
 export function destEquals(implication : Term) : [Term, Term] {
