@@ -3,7 +3,7 @@
 Flyweight implementation of abstraction logic in TypeScript 
 for experimenting with abstraction logic in practice.
 
-Pointers for the paper submitted to CADE-30 (you can run each example,
+Pointers for the [accompanying paper](https://doi.org/10.5281/zenodo.15119824) (you can run each example,
 for example `npm run Example-2`):
 
 * Example-2: [src/theories/Example-2.theory.ts](src/theories/Example-2.theory.ts)
